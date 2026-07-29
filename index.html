@@ -299,7 +299,7 @@ const PRESET_SCRIPTS = [{"id": 1, "category": "售后", "title": "超7天无理�
 const COVER_COLORS = ["#5e5ce6", "#ff375f", "#ff9f0a", "#34c759", "#0891b2", "#af52de", "#ff6482", "#30b0c7"];
 const DEFAULT_DATA_FIELDS = ["销售量", "销售额", "退货量", "退货额"];
 const DEFAULT_REVIEW_STATS = [{"id": "sales", "label": "实际销量", "color": "success", "calc": "sales"}, {"id": "revenue", "label": "实际销售额", "color": "accent", "calc": "revenue"}, {"id": "returns", "label": "退货量", "color": "purple", "calc": "returns"}, {"id": "returnRate", "label": "退货率", "color": "warning", "calc": "returnRate"}, {"id": "sportCount", "label": "运动次数", "color": "pink", "calc": "sportCount"}, {"id": "inspCount", "label": "灵感条数", "color": "accent", "calc": "inspCount"}];
-const SPORT_TYPES = ["跑步", "舞蹈课", "瑜伽", "游泳", "骑行", "健身", "跳绳", "其他"];
+const SPORT_TYPES = ["舞蹈课", "瑜伽", "游泳", "骑行", "健身", "跳绳", "其他"];
 const DURATION_OPTIONS = [30, 45, 60, 90, 120];
 
 // ===== 工具函数 =====
@@ -1193,11 +1193,13 @@ function showSportModal() {
   const durOptions = DURATION_OPTIONS.map(d => '<option value="' + d + '"' + (d === sportDuration ? ' selected' : '') + '>' + d + ' 分钟</option>').join('');
 
   showModal('记录运动',
+    '<div class="form-group"><label class="form-label">日期</label><input type="date" class="form-input" id="sport-date" value="' + currentDate + '"></div>' +
     '<div class="form-group"><label class="form-label">运动类型</label><select class="form-select" id="sport-type">' + typeOptions + '</select></div>' +
     '<div class="form-group"><label class="form-label">时长</label><select class="form-select" id="sport-duration">' + durOptions + '<option value="custom">自定义</option></select></div>' +
     '<div class="form-group" id="custom-dur-group" style="display:none;"><input type="number" class="form-input" id="sport-dur-custom" placeholder="分钟" min="1"></div>' +
     '<div class="form-group"><label class="form-label">消耗卡路里（估算）</label><input type="number" class="form-input" id="sport-cal" placeholder="千卡" value="200"></div>',
     function() {
+      const sportDate = document.getElementById('sport-date').value || currentDate;
       const type = document.getElementById('sport-type').value;
       let duration = parseInt(document.getElementById('sport-duration').value);
       if (isNaN(duration)) duration = parseInt(document.getElementById('sport-dur-custom').value) || 60;
@@ -1205,12 +1207,12 @@ function showSportModal() {
 
       sportDuration = duration;
       if (!DB.sports) DB.sports = [];
-      DB.sports.push({ id: genId(), type, duration, calories: cal, date: currentDate });
+      DB.sports.push({ id: genId(), type, duration, calories: cal, date: sportDate });
 
       // 自动同步到待办
       const taskText = type + ' ' + duration + '分钟';
-      if (!DB.tasks.find(t => t.date === currentDate && t.text === taskText)) {
-        DB.tasks.push({ id: nid++, text: taskText, date: currentDate, done: true, autoSport: true });
+      if (!DB.tasks.find(t => t.date === sportDate && t.text === taskText)) {
+        DB.tasks.push({ id: nid++, text: taskText, date: sportDate, done: true, autoSport: true });
       }
 
       save(); closeModal(); renderPage();
