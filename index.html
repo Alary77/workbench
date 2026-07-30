@@ -254,7 +254,7 @@ body{font-family:'Inter','Noto Sans SC',-apple-system,sans-serif;background:var(
     <div class="page-header">
       <div>
         <div class="page-title">工作</div>
-        <div class="page-subtitle">选题灵感 · 笔记草稿 · 客服话术库 · 每日数据 · 每周复盘</div>
+        <div class="page-subtitle">选题灵感 · 笔记草稿 · 客服话术 · 每日数据 · 每周复盘</div>
       </div>
     </div>
     <div id="work-content"></div>
@@ -291,7 +291,7 @@ body{font-family:'Inter','Noto Sans SC',-apple-system,sans-serif;background:var(
 // ===== 常量与配置 =====
 const STORAGE_KEY = 'my_workbench_v4';
 const DEFAULT_MODULES = [{"id": "todo", "name": "待办", "icon": "✅", "deletable": false}, {"id": "work", "name": "工作", "icon": "📋", "deletable": false}, {"id": "daily", "name": "日常", "icon": "🌿", "deletable": false}];
-const DEFAULT_SUB_MODULES = {"todo": [{"id": "todo-tasks", "title": "全部任务", "type": "tasks", "collapsed": false}], "work": [{"id": "work-inspiration", "title": "选题灵感", "type": "inspiration", "collapsed": false}, {"id": "work-drafts", "title": "笔记草稿", "type": "drafts", "collapsed": false}, {"id": "work-scripts", "title": "客服话术库", "type": "scripts", "collapsed": false}, {"id": "work-data", "title": "每日数据", "type": "data", "collapsed": false}, {"id": "work-review", "title": "每周复盘", "type": "review", "collapsed": false}], "daily": [{"id": "daily-sport", "title": "运动记录", "type": "sport", "collapsed": false}, {"id": "daily-social", "title": "社交时间", "type": "social", "collapsed": false}, {"id": "daily-reading", "title": "读书笔记", "type": "reading", "collapsed": false}]};
+const DEFAULT_SUB_MODULES = {"todo": [{"id": "todo-tasks", "title": "全部任务", "type": "tasks", "collapsed": false}], "work": [{"id": "work-inspiration", "title": "选题灵感", "type": "inspiration", "collapsed": false}, {"id": "work-drafts", "title": "笔记草稿", "type": "drafts", "collapsed": false}, {"id": "work-scripts", "title": "客服话术", "type": "scripts", "collapsed": false}, {"id": "work-data", "title": "每日数据", "type": "data", "collapsed": false}, {"id": "work-review", "title": "每周复盘", "type": "review", "collapsed": false}], "daily": [{"id": "daily-sport", "title": "运动记录", "type": "sport", "collapsed": false}, {"id": "daily-social", "title": "社交时间", "type": "social", "collapsed": false}, {"id": "daily-reading", "title": "读书笔记", "type": "reading", "collapsed": false}]};
 const PRESET_SCRIPTS = [{"id": 1, "category": "售后", "title": "超7天无理由退货婉拒", "content": "薯宝～这边看到您的订单已经超过7天无理由退货时效了哈，目前没办法按这个原因给您退货了。您看有其他问题我可以帮您的嘛？"}, {"id": 2, "category": "售后", "title": "质量问题引导提供照片", "content": "薯宝，看到您申请退货时选的原因是'质量问题'，想跟您确认一下，具体是哪里有问题呀？方便拍张照片给我看一下嘛？我这边帮您核实处理哈！"}, {"id": 3, "category": "售后", "title": "商品破损引导提供照片", "content": "薯宝～看到您申请的原因选的是'商品破损'，这个有可能是运输途中造成的，辛苦您先把照片发我一下哈，我核实一下情况。"}, {"id": 4, "category": "售后", "title": "引导修改退款原因为个人原因", "content": "薯宝了解了，天然竹材可能存在xxx等问题/发货前均仔细检查，划痕可能为运输过程中磕碰导致，方便辛苦您把退款原因改成\"多拍/错拍\"或\"不喜欢\"/\"协商一致\"吗？不然对我们店铺会有影响，修改退款原因退款金额和流程都不受影响哈，就是改个选项，辛苦您帮个忙啦感谢感谢！"}, {"id": 5, "category": "须知", "title": "退货须知-完好无损提醒", "content": "薯宝，这边可以给您通过退货申请哈，辛苦您寄回的时候保证商品完好无损，不影响二次销售。仓库收到后会进行核验，如果有损坏、磨损、使用痕迹或者影响二次销售的情况，这边是没办法通过验收的，到时候可能需要原路给您退回去哈辛苦您打包好再寄出，感谢理解~"}, {"id": 6, "category": "售后", "title": "退货物流未揽收跟进", "content": "薯宝，看到您填了退货单号，但物流还没更新呢，方便确认一下是否已经寄出了呀？如果寄出了可以把单号再发我一下，我帮您跟进~"}, {"id": 7, "category": "售后", "title": "退货验收不通过协商方案", "content": "薯宝～这边收到您的退货包裹了，但是检查的时候发现【有磨损痕迹/有划痕】，具体我拍给您看一下哈【发照片】\n\n因为咱们退货前有约定需要保持商品完好不影响二次销售，目前这种情况仓库没办法正常验收通过。您看两个方案：\n1.如果您确认商品确实有使用痕迹，这边可能没办法全款退，咱们协商一个折价退款金额；\n2.如果您坚持要全退的话，那这个包裹可能要给您原路退回去，运费需要您这边承担～\n\n您看怎么处理比较方便？麻烦了！"}, {"id": 8, "category": "促单", "title": "客户下单取消后挽回", "content": "薯宝 看您下单又取消了，是有什么疑虑吗？\n\n这款曲面屏风区别于传统中式折叠屏风，曲面设计，可展可卷，收纳自如。兼具东方美学和西方现代家居美学，5～6年毛竹制作，绿色环保。一直出口欧美日韩十几年了，今年投放国内市场，深受都市人群喜爱。各种空间场所都能轻松驾驭，如家居隔断装饰，阳台玄关，卧室，书房，商业空间会议室，工作室，咖啡馆，茶室，画室，艺术工作室，美容美发设计室，民宿，酒店，服装店，等等空间隔断装饰。"}, {"id": 9, "category": "常见问题", "title": "竹子结疤是自然纹理解释", "content": "薯宝，这款选用5-6年生天然高山毛竹，结疤是竹子的自然纹理特征，无法避免也没有结疤更少的选项哦～不过天然竹纹质感独特\n\n一般实际到手，竹节是很自然，不突兀的，可以帮您挑一下"}, {"id": 10, "category": "售后", "title": "退货原因了解与记录", "content": "薯宝～看到您申请了退货退款，想跟您了解一下具体是什么原因让您不满意呀？您跟我说说，我这边记录反馈一下，方便咱们后续改进～麻烦您啦🙏"}, {"id": 11, "category": "售前", "title": "屏风尺寸与场景推荐", "content": "薯宝～这款屏风的尺寸是180cm高×240cm宽哈。不过想多问一句，您这边是想放在客厅、阳台，还是玄关/过道呀？装修风格和色调是什么样的？因为不同场景我们一般会推荐不同的尺寸和颜色搭配，您跟我说说，我帮您参谋一下～"}, {"id": 12, "category": "售前", "title": "客厅尺寸与颜色搭配建议", "content": "客厅的话，180×240这个尺寸很合适，做沙发背景或者客厅隔断都很有质感。颜色方面，如果家里是浅色系、奶油风，可以选原木色；如果是深色家具或者想更有线条感，可以选白色款，视觉上更稳。您家大概是什么色调呀？我可以帮您匹配一下～"}, {"id": 13, "category": "售前", "title": "屏风材质与工艺介绍", "content": "另外跟您同步一下哈，咱们这款屏风是5~6年的天然原竹制作的，不是贴皮也不是压制板，每一根的竹纹都是天然的、独一无二的，所以每款屏风的纹理都不一样，很有质感。表面做了防潮处理，日常用抹布擦一下就行，不娇气。而且它可卷可展，不用的时候收起来方便也不占地方，使用很灵活～"}, {"id": 14, "category": "售前", "title": "发实拍图参考并促单", "content": "对了，我给您发几张其他薯宝的实拍图您参考一下，天然竹纹在不同光线下的表现差别还挺大的，有放在客厅的、阳台的，还有做隔断的，您看看哪个感觉更接近您想要的风格～有喜欢的可以直接跟我说，我帮您备注优先发货哈😊"}, {"id": 15, "category": "售前", "title": "屏风环保工艺详细介绍", "content": "薯宝，屏风基材选用5-6年高山毛竹，着色采用水性环保清漆一体上色工艺。\n\n有色款是将环保色浆融合��性漆浸透竹材表面，上色均匀；月影原色款没有额外添加色浆，仅涂刷透明水性保护漆，保留竹子原生色泽。\n\n整款无刺鼻异味，环保等级达标，可以放心居家使用。"}, {"id": 16, "category": "促单", "title": "下单后VIP关怀与退货提醒", "content": "亲爱的VIP，感谢您选择我们的曲面竹屏风🌿\n\n出口欧美日韩十余年的品质，每一面都经过严格质检才会发出，请您放心～\n\n🔔 温馨小贴士：\n收货后如有任何问题（运输磕碰、安装疑问、颜色感觉不对等等），请一定第一时间联系我们，拍照发给我们，我们会最快速度给您解决❤️\n\n��️ 特别提醒：\n万一要退货，请在后台选择'拍错/不想要'等个人原因，这样退款流程最快，我们秒处理～\n\n有句话想跟您说：我们做的是口碑生意，不怕出问题，怕的是您不给我们机会解决问题。 有任何不满意，先找我们，一定给您一个满意的答复✨\n\n祝您生活愉快，期待屏风为您的空间增添一份美好～"}];
 const COVER_COLORS = ["#9888c0", "#d47a7a", "#e8986e", "#8aafb8", "#8ba8cc", "#c890a0", "#a89bc4", "#8ba8cc"];
 const DEFAULT_DATA_FIELDS = ["销售量", "销售额", "退货量", "退货额"];
@@ -798,7 +798,7 @@ function renderWorkContent() {
     // 显示所有子模块概览
     let html = '';
     for (const sub of subs) {
-      html += '<div class="section-block section-header sub-card" data-sub-id="' + sub.id + '" draggable="true" ondragstart="dragSubStart(event)" ondragover="dragSubOver(event)" ondrop="dropSubReorder(event,\'work\')" style="cursor:grab;">';
+      html += '<div class="section-block section-header sub-card" data-sub-id="' + sub.id + '" style="cursor:grab;">';
       html += '<h3 style="font-size:16px;font-weight:600;">' + esc(sub.title) + '</h3>';
       html += '<span style="font-size:12px;color:var(--text-muted);">拖拽排序 · 点击进入 →</span>';
       html += '</div>';
@@ -806,13 +806,15 @@ function renderWorkContent() {
     if (subs.length === 0) html = '<div style="text-align:center;padding:40px;color:var(--text-muted);">暂无子模块，点击右上角添加</div>';
     container.innerHTML = html;
 
-    // 点击进入子模块（拖拽时不触发）
+    // 子模块概览 - 点击进入
     container.querySelectorAll('.sub-card').forEach(function(card) {
       card.addEventListener('click', function(e) {
         if (dragDidDrop) { dragDidDrop = false; return; }
         switchSubModule('work', card.dataset.subId);
       });
     });
+    // 长按拖拽排序（兼容移动端）
+    enableSubDragSort(container, 'work');
   }
 }
 
@@ -1085,9 +1087,9 @@ function deleteDraft(id) {
   save(); renderPage();
 }
 
-// ===== 客服话术库 =====
+// ===== 客服话术 =====
 function renderScriptsContent() {
-  let html = '<div class="page-header"><div class="page-title">客服话术库</div><div style="display:flex;gap:8px;"><button class="btn btn-primary" onclick="showScriptModal()">+ 添加话术</button><button class="btn btn-ghost" onclick="exportScripts()" style="border:1px solid var(--border);">📤 导出话术</button></div></div>';
+  let html = '<div class="page-header"><div class="page-title">客服话术</div><div style="display:flex;gap:8px;"><button class="btn btn-primary" onclick="showScriptModal()">+ 添加话术</button><button class="btn btn-ghost" onclick="exportScripts()" style="border:1px solid var(--border);">📤 导出话术</button></div></div>';
 
   html += '<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">';
   html += '<input type="text" class="form-input" id="script-search" placeholder="搜索话术..." oninput="renderScriptsContent()" style="max-width:300px;">';
@@ -1228,7 +1230,7 @@ function exportScripts() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = '客服话术库_' + todayStr() + '.txt';
+    a.download = '客服话术_' + todayStr() + '.txt';
     a.click();
     URL.revokeObjectURL(url);
   } catch(e) {}
@@ -1451,9 +1453,9 @@ function renderDailyContent() {
   } else {
     let html = '';
     for (const sub of subs) {
-      html += '<div class="section-block section-header sub-card" data-sub-id="' + sub.id + '" draggable="true" ondragstart="dragSubStart(event)" ondragover="dragSubOver(event)" ondrop="dropSubReorder(event,\'daily\')" style="cursor:grab;">';
+      html += '<div class="section-block section-header sub-card" data-sub-id="' + sub.id + '" style="cursor:grab;">';
       html += '<h3 style="font-size:16px;font-weight:600;">' + esc(sub.title) + '</h3>';
-      html += '<span style="font-size:12px;color:var(--text-muted);">拖拽排序 · 点击进入 →</span>';
+      html += '<span style="font-size:12px;color:var(--text-muted);">长按拖拽排序 · 点击进入 →</span>';
       html += '</div>';
     }
     if (subs.length === 0) html = '<div style="text-align:center;padding:40px;color:var(--text-muted);">暂无子模块，点击右上角添加</div>';
@@ -1465,6 +1467,8 @@ function renderDailyContent() {
         switchSubModule('daily', card.dataset.subId);
       });
     });
+    // 长按拖拽排序（兼容移动端）
+    enableSubDragSort(container, 'daily');
   }
 }
 
@@ -1472,41 +1476,101 @@ function renderDailyContent() {
 let dragSrcSubId = null;
 let dragDidDrop = false;
 
-function dragSubStart(e) {
-  dragSrcSubId = e.target.dataset.subId;
-  dragDidDrop = false;
-  e.target.classList.add('dragging');
-  e.target.style.opacity = '0.5';
-  e.dataTransfer.effectAllowed = 'move';
-}
+// 通用子模块拖拽排序（兼容桌面和移动端，长按触发）
+function enableSubDragSort(container, modId) {
+  const cards = container.querySelectorAll('.sub-card');
+  let longPressTimer = null;
+  let dragCard = null;
+  let clone = null;
+  let startY = 0;
+  let startX = 0;
+  let cardOffsetY = 0;
+  let cardOffsetX = 0;
 
-function dragSubOver(e) {
-  e.preventDefault();
-  e.dataTransfer.dropEffect = 'move';
-}
+  cards.forEach(function(card) {
+    // 长按开始拖拽
+    card.addEventListener('pointerdown', function(e) {
+      longPressTimer = setTimeout(function() {
+        dragCard = card;
+        dragDidDrop = false;
+        card.style.opacity = '0.5';
+        card.style.zIndex = '100';
+        startY = e.clientY;
+        startX = e.clientX;
+        const rect = card.getBoundingClientRect();
+        cardOffsetY = startY - rect.top;
+        cardOffsetX = startX - rect.left;
+        card.style.position = 'fixed';
+        card.style.left = rect.left + 'px';
+        card.style.top = rect.top + 'px';
+        card.style.width = rect.width + 'px';
+        card.style.pointerEvents = 'none';
+      }, 400);
+    });
 
-function dropSubReorder(e, modId) {
-  e.preventDefault();
-  dragDidDrop = true;
-  document.querySelectorAll('.sub-card').forEach(function(c) {
-    c.style.opacity = '1';
-    c.classList.remove('dragging');
+    card.addEventListener('pointermove', function(e) {
+      if (!dragCard || dragCard !== card) return;
+      card.style.left = (e.clientX - cardOffsetX) + 'px';
+      card.style.top = (e.clientY - cardOffsetY) + 'px';
+
+      // 检测下方卡片
+      const allCards = container.querySelectorAll('.sub-card');
+      allCards.forEach(function(other) {
+        if (other === card) return;
+        const r = other.getBoundingClientRect();
+        const mid = r.top + r.height / 2;
+        if (e.clientY > mid) {
+          other.style.transform = 'translateY(0)';
+        } else {
+          other.style.transform = 'translateY(0)';
+        }
+      });
+    });
+
+    card.addEventListener('pointerup', function(e) {
+      clearTimeout(longPressTimer);
+      if (!dragCard || dragCard !== card) return;
+
+      dragDidDrop = true;
+      card.style.opacity = '1';
+      card.style.zIndex = '';
+      card.style.position = '';
+      card.style.left = '';
+      card.style.top = '';
+      card.style.width = '';
+      card.style.pointerEvents = '';
+
+      // 找到目标位置
+      const allCards = container.querySelectorAll('.sub-card');
+      let targetId = null;
+      allCards.forEach(function(other) {
+        other.style.transform = '';
+        if (other === card) return;
+        const r = other.getBoundingClientRect();
+        if (e.clientY > r.top && e.clientY < r.bottom) {
+          targetId = other.dataset.subId;
+        }
+      });
+
+      if (targetId && targetId !== card.dataset.subId) {
+        const subs = DB.subModules[modId];
+        const srcIdx = subs.findIndex(function(s) { return s.id === card.dataset.subId; });
+        const dstIdx = subs.findIndex(function(s) { return s.id === targetId; });
+        if (srcIdx >= 0 && dstIdx >= 0) {
+          const moved = subs.splice(srcIdx, 1)[0];
+          subs.splice(dstIdx, 0, moved);
+          save();
+          renderPage();
+        }
+      }
+
+      dragCard = null;
+    });
+
+    card.addEventListener('pointerleave', function() {
+      clearTimeout(longPressTimer);
+    });
   });
-
-  const target = e.target.closest('.sub-card');
-  if (!target || target.dataset.subId === dragSrcSubId) { dragSrcSubId = null; return; }
-
-  const subs = DB.subModules[modId];
-  const srcIdx = subs.findIndex(function(s) { return s.id === dragSrcSubId; });
-  const dstIdx = subs.findIndex(function(s) { return s.id === target.dataset.subId; });
-
-  if (srcIdx >= 0 && dstIdx >= 0) {
-    const moved = subs.splice(srcIdx, 1)[0];
-    subs.splice(dstIdx, 0, moved);
-    save();
-    renderPage();
-  }
-  dragSrcSubId = null;
 }
 
 // ===== 运动记录 =====
