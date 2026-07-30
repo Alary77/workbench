@@ -1003,23 +1003,49 @@ function renderDraftsContent() {
   } else {
     html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;">';
     for (const item of list) {
+      const title = item.title || '无标题';
+      const content = item.content || '';
       html += '<div class="section-block" style="position:relative;">';
-      html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">';
-      html += '<span style="font-weight:600;font-size:15px;">' + esc(item.title || '无标题') + '</span>';
-      html += '<div style="display:flex;gap:8px;">';
-      html += '<span style="cursor:pointer;color:var(--accent);font-size:13px;" onclick="editDraft(\'' + item.id + '\')">编辑</span>';
-      html += '<span style="cursor:pointer;color:var(--danger);font-size:13px;" onclick="deleteDraft(\'' + item.id + '\')">删除</span>';
-      html += '</div></div>';
-      html += '<div style="font-size:13px;line-height:1.6;white-space:pre-wrap;color:var(--text-secondary);margin-bottom:8px;">' + esc((item.content || '').substring(0, 200)) + (item.content && item.content.length > 200 ? '...' : '') + '</div>';
+      // 标题行 + 复制按钮
+      html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">';
+      html += '<span style="font-weight:600;font-size:15px;flex:1;">' + esc(title) + '</span>';
+      html += '<span style="cursor:pointer;color:var(--accent);font-size:11px;white-space:nowrap;" onclick="copyToClipboard(\'' + escAttr(title) + '\')">📋 复制标题</span>';
+      html += '</div>';
+      // 正文 + 复制按钮
+      html += '<div style="font-size:13px;line-height:1.6;white-space:pre-wrap;color:var(--text-secondary);margin-bottom:6px;">' + esc(content.substring(0, 200)) + (content.length > 200 ? '...' : '') + '</div>';
+      html += '<span style="cursor:pointer;color:var(--accent);font-size:11px;" onclick="copyToClipboard(\'' + escAttr(content) + '\')">📋 复制正文</span>';
+      // 缩略图
       if (item.image) {
-        html += '<img src="' + escAttr(item.image) + '" style="max-width:100%;max-height:160px;border-radius:8px;">';
+        html += '<div style="margin-top:8px;"><img src="' + escAttr(item.image) + '" style="max-width:100%;max-height:160px;border-radius:8px;display:block;" onerror="this.style.display=\'none\'"></div>';
       }
-      html += '<div style="font-size:11px;color:var(--text-muted);margin-top:6px;">' + esc(item.date || '') + '</div>';
+      // 底部：日期 + 操作按钮（横排）
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:8px;border-top:1px solid var(--border-light);">';
+      html += '<span style="font-size:11px;color:var(--text-muted);">' + esc(item.date || '') + '</span>';
+      html += '<div style="display:flex;gap:12px;">';
+      html += '<span style="cursor:pointer;color:var(--accent);font-size:12px;" onclick="editDraft(\'' + item.id + '\')">✏️ 编辑</span>';
+      html += '<span style="cursor:pointer;color:var(--danger);font-size:12px;" onclick="deleteDraft(\'' + item.id + '\')">🗑 删除</span>';
+      html += '</div></div>';
       html += '</div>';
     }
     html += '</div>';
   }
   return html;
+}
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(function() {
+    showToast('已复制');
+  }).catch(function() {
+    // 降级方案
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('已复制');
+  });
 }
 
 function showDraftModal(editId) {
