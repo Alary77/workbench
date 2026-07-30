@@ -780,7 +780,8 @@ function renderWorkContent() {
 
 // ===== 选题灵感 =====
 function renderInspirationContent() {
-  let html = '<div class="page-header"><div class="page-title">选题灵感</div><button class="btn btn-primary" onclick="showInspirationModal()">+ 添加灵感</button></div>';
+  const inspTags = DB.inspTags || ['内容选题','视频创意','生活灵感','学习心得','其他'];
+  let html = '<div class="page-header"><div class="page-title">选题灵感</div><div style="display:flex;gap:8px;"><button class="btn btn-ghost" onclick="showTagManager()" style="border:1px solid var(--border);font-size:13px;">⚙ 管理标签</button><button class="btn btn-primary" onclick="showInspirationModal()">+ 添加灵感</button></div></div>';
 
   const list = DB.inspirations || [];
   if (list.length === 0) {
@@ -792,7 +793,10 @@ function renderInspirationContent() {
       html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">';
       html += '<span style="font-size:11px;background:var(--accent-light);color:var(--accent);padding:2px 8px;border-radius:10px;">' + esc(item.tag || '未分类') + '</span>';
       html += '<span style="font-size:11px;color:var(--text-muted);">' + esc(item.date || '') + '</span>';
-      html += '<span style="margin-left:auto;cursor:pointer;color:var(--danger);font-size:13px;" onclick="deleteInspiration(\'' + item.id + '\')">删除</span>';
+      html += '<span style="margin-left:auto;display:flex;gap:8px;">';
+      html += '<span style="cursor:pointer;color:var(--accent);font-size:13px;" onclick="editInspiration(\'' + item.id + '\')">编辑</span>';
+      html += '<span style="cursor:pointer;color:var(--danger);font-size:13px;" onclick="deleteInspiration(\'' + item.id + '\')">删除</span>';
+      html += '</span>';
       html += '</div>';
       html += '<div style="font-size:14px;line-height:1.6;white-space:pre-wrap;margin-bottom:8px;">' + esc(item.content || '') + '</div>';
       if (item.image) {
@@ -805,17 +809,31 @@ function renderInspirationContent() {
   return html;
 }
 
-function showInspirationModal() {
-  showModal('添加灵感',
-    '<div class="form-group"><label class="form-label">标签</label><select class="form-select" id="insp-tag"><option>内容选题</option><option>视频创意</option><option>生活灵感</option><option>学习心得</option><option>其他</option></select></div>' +
-    '<div class="form-group"><label class="form-label">灵感内容</label><div class="voice-row"><textarea class="form-textarea" id="insp-content" placeholder="写下你的灵感片段...（可语音输入）" style="min-height:120px;"></textarea><button class="btn-voice" id="voice-insp-content" onclick="startVoice(\'insp-content\',\'voice-insp-content\')">🎤</button></div></div>' +
+function showInspirationModal(editId) {
+  const inspTags = DB.inspTags || ['内容选题','视频创意','生活灵感','学习心得','其他'];
+  const tagOptions = inspTags.map(function(t) { return '<option>' + esc(t) + '</option>'; }).join('');
+
+  let editItem = null;
+  let title = '添加灵感';
+  if (editId) {
+    editItem = (DB.inspirations || []).find(function(i) { return i.id === editId; });
+    if (editItem) title = '编辑灵感';
+  }
+
+  const defaultTag = editItem ? esc(editItem.tag || inspTags[0]) : inspTags[0];
+  const defaultContent = editItem ? esc(editItem.content || '') : '';
+  const defaultImage = editItem ? esc(editItem.image || '') : '';
+
+  showModal(title,
+    '<div class="form-group"><label class="form-label">标签</label><select class="form-select" id="insp-tag">' + tagOptions + '</select></div>' +
+    '<div class="form-group"><label class="form-label">灵感内容</label><div class="voice-row"><textarea class="form-textarea" id="insp-content" placeholder="写下你的灵感片段...（可语音输入）" style="min-height:120px;">' + defaultContent + '</textarea><button class="btn-voice" id="voice-insp-content" onclick="startVoice(\'insp-content\',\'voice-insp-content\')">🎤</button></div></div>' +
     '<div class="form-group"><label class="form-label">图片（选填）</label>' +
     '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' +
-    '<input type="text" class="form-input" id="insp-image" placeholder="粘贴图片URL..." style="flex:1;min-width:150px;">' +
+    '<input type="text" class="form-input" id="insp-image" placeholder="粘贴图片URL..." style="flex:1;min-width:150px;" value="' + defaultImage + '">' +
     '<span style="color:var(--text-muted);font-size:12px;">或</span>' +
     '<label class="btn btn-ghost" style="cursor:pointer;border:1px solid var(--border);padding:8px 14px;font-size:13px;margin:0;">📷 本地上传<input type="file" accept="image/*" id="insp-img-upload" style="display:none;" onchange="handleInspImgUpload(this)"></label>' +
     '</div>' +
-    '<div id="insp-img-preview" style="margin-top:8px;display:none;"><img id="insp-img-preview-img" style="max-width:100%;max-height:150px;border-radius:8px;"></div></div>',
+    '<div id="insp-img-preview" style="margin-top:8px;' + (defaultImage ? '' : 'display:none;') + '"><img id="insp-img-preview-img" style="max-width:100%;max-height:150px;border-radius:8px;"' + (defaultImage ? ' src="' + defaultImage + '"' : '') + '></div></div>',
     function() {
       const tag = document.getElementById('insp-tag').value;
       const content = document.getElementById('insp-content').value.trim();
@@ -832,16 +850,36 @@ function showInspirationModal() {
 
       if (!content && !image) { alert('请至少输入文字或上传图片'); return; }
 
-      DB.inspirations.unshift({
-        id: genId(),
-        tag: tag,
-        content: content,
-        image: image,
-        date: todayStr()
-      });
+      if (editItem) {
+        editItem.tag = tag;
+        editItem.content = content;
+        editItem.image = image;
+      } else {
+        DB.inspirations.unshift({
+          id: genId(),
+          tag: tag,
+          content: content,
+          image: image,
+          date: todayStr()
+        });
+      }
       save(); closeModal(); renderPage();
     }
   );
+
+  // 设置默认选中标签
+  setTimeout(function() {
+    const sel = document.getElementById('insp-tag');
+    if (sel && defaultTag) {
+      for (const opt of sel.options) {
+        if (opt.value === defaultTag) { sel.value = defaultTag; break; }
+      }
+    }
+  }, 50);
+}
+
+function editInspiration(id) {
+  showInspirationModal(id);
 }
 
 function handleInspImgUpload(input) {
@@ -864,6 +902,46 @@ function deleteInspiration(id) {
   if (!confirm('确定删除这条灵感？')) return;
   DB.inspirations = DB.inspirations.filter(i => i.id !== id);
   save(); renderPage();
+}
+
+// ===== 标签管理 =====
+function showTagManager() {
+  if (!DB.inspTags) DB.inspTags = ['内容选题','视频创意','生活灵感','学习心得','其他'];
+  let html = '<div style="margin-bottom:12px;font-size:13px;color:var(--text-secondary);">管理选题灵感的分类标签，已有的灵感不受影响</div>';
+  html += '<div id="tag-list-container" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;">';
+  DB.inspTags.forEach(function(t, idx) {
+    html += '<div style="display:flex;align-items:center;gap:6px;">';
+    html += '<input class="form-input" value="' + esc(t) + '" data-idx="' + idx + '" style="flex:1;" onchange="updateInspTag(this)">';
+    html += '<span style="cursor:pointer;color:var(--danger);font-size:13px;" onclick="deleteInspTag(' + idx + ')">✕</span>';
+    html += '</div>';
+  });
+  html += '</div>';
+  html += '<button class="btn btn-ghost" onclick="addInspTag()" style="width:100%;border:1px dashed var(--border);">+ 添加标签</button>';
+
+  showModal('管理标签', html, function() {
+    // 保存：过滤空标签
+    DB.inspTags = DB.inspTags.filter(function(t) { return t.trim() !== ''; });
+    if (DB.inspTags.length === 0) DB.inspTags = ['其他'];
+    save(); closeModal(); renderPage();
+  });
+}
+
+function updateInspTag(input) {
+  const idx = parseInt(input.getAttribute('data-idx'));
+  if (idx >= 0 && idx < DB.inspTags.length) {
+    DB.inspTags[idx] = input.value;
+  }
+}
+
+function deleteInspTag(idx) {
+  if (DB.inspTags.length <= 1) { alert('至少保留一个标签'); return; }
+  DB.inspTags.splice(idx, 1);
+  showTagManager(); // 刷新弹窗
+}
+
+function addInspTag() {
+  DB.inspTags.push('新标签');
+  showTagManager();
 }
 
 // ===== 客服话术库 =====
