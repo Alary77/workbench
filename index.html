@@ -616,8 +616,28 @@ function renderTitleGenerator() {
     '<button class="btn btn-xs btn-primary" onclick="refreshTitle()">🔄 换一条</button>' +
     '</div>' +
     '<div class="title-card" style="background:var(--bg);border-radius:var(--radius);padding:16px 18px;font-size:16px;font-weight:600;line-height:1.6;color:var(--text-primary);cursor:pointer;transition:all 0.15s;" onclick="copyGeneratedTitle(this)" id="generated-title">' + esc(title) + '</div>' +
-    '<div style="font-size:11px;color:var(--text-muted);margin-top:8px;text-align:right;">👆 点击标题即可复制</div>' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">' +
+    '<span style="font-size:11px;color:var(--text-muted);">👆 点击标题即可复制</span>' +
+    '<button class="btn btn-xs btn-ghost" onclick="saveTitleToInspiration()" style="border:1px solid var(--border);font-size:12px;padding:3px 10px;">💡 保存到灵感</button>' +
+    '</div>' +
     '</div>';
+}
+
+function saveTitleToInspiration() {
+  var el = document.getElementById('generated-title');
+  if (!el) return;
+  var title = el.textContent.trim();
+  if (!title) return;
+  if (!DB.inspirations) DB.inspirations = [];
+  DB.inspirations.unshift({
+    id: genId(),
+    tag: '内容选题',
+    content: title,
+    image: null,
+    date: todayStr()
+  });
+  save();
+  showToast('已保存到选题灵感');
 }
 
 var titleFormulas = [
