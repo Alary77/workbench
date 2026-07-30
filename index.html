@@ -586,6 +586,93 @@ function renderTasks() {
   }
 
   document.getElementById('task-list').innerHTML = html;
+
+  // 标题生成器
+  var titleBlock = document.getElementById('title-generator');
+  if (!titleBlock) {
+    titleBlock = document.createElement('div');
+    titleBlock.id = 'title-generator';
+    document.getElementById('task-list').parentNode.insertBefore(titleBlock, document.getElementById('task-list').nextSibling);
+  }
+  titleBlock.innerHTML = renderTitleGenerator();
+}
+
+function renderTitleGenerator() {
+  var title = generateTitle();
+  return '<div class="section-block" style="border-left:3px solid var(--accent);margin-top:20px;">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">' +
+    '<div style="display:flex;align-items:center;gap:8px;">' +
+    '<span style="font-size:18px;">🔥</span>' +
+    '<span style="font-weight:700;font-size:14px;">爆款标题灵感</span>' +
+    '<span style="font-size:10px;color:var(--text-muted);background:var(--accent-light);padding:2px 6px;border-radius:4px;">家居·屏风</span>' +
+    '</div>' +
+    '<button class="btn btn-xs btn-primary" onclick="refreshTitle()">🔄 换一条</button>' +
+    '</div>' +
+    '<div class="title-card" style="background:var(--bg);border-radius:var(--radius);padding:16px 18px;font-size:16px;font-weight:600;line-height:1.6;color:var(--text-primary);cursor:pointer;transition:all 0.15s;" onclick="copyGeneratedTitle(this)" id="generated-title">' + esc(title) + '</div>' +
+    '<div style="font-size:11px;color:var(--text-muted);margin-top:8px;text-align:right;">👆 点击标题即可复制</div>' +
+    '</div>';
+}
+
+var titleFormulas = [
+  { prefix: '99%的人不知道的', suffix: '，原来可以这么美' },
+  { prefix: '被问了100遍的', suffix: '，终于安排上了' },
+  { prefix: '后悔没早买的', suffix: '，绝了' },
+  { prefix: '抄作业！', suffix: '这样搭太高级了' },
+  { prefix: '闺蜜以为我花了', suffix: '，其实才几百块' },
+  { prefix: '装修最后悔的就是没早点用', suffix: '' },
+  { prefix: '被邻居追着问链接的', suffix: '，太绝了' },
+  { prefix: '千万别买', suffix: '，不然你会爱上它' },
+  { prefix: '我妈说这', suffix: '是她见过最好看的' },
+  { prefix: '小户型必入的', suffix: '，空间大一倍' },
+  { prefix: '入住半年最不后悔的', suffix: '分享' },
+  { prefix: '设计师私藏的', suffix: '搭配公式' },
+  { prefix: '朋友来我家以为换了套房，全靠这个', suffix: '' },
+  { prefix: '听劝！', suffix: '一定要选这个颜色' },
+  { prefix: '用了', suffix: '才知道什么叫高级感' }
+];
+
+var titleSubjects = [
+  '曲面竹屏风', '原木屏风隔断', '客厅隔断屏风', '竹编屏风',
+  '阳台屏风隔断', '玄关屏风', '卧室屏风', '新中式屏风',
+  '竹艺装饰', '折叠屏风', '日式隔断', '侘寂风屏风',
+  '奶油风隔断', '民宿同款屏风', '极简隔断', '茶室屏风'
+];
+
+var titleEndings = [
+  '氛围感拉满', '越看越喜欢', '随手一拍就是大片', '美到失语',
+  '真的yyds', '太治愈了', '好看到哭', '谁用谁知道',
+  '颜值天花板', '太会了吧', '直接抄作业', '后悔没早买',
+  '一眼就爱了', '相见恨晚', '被夸爆了', '根本不想出门'
+];
+
+function generateTitle() {
+  var f = titleFormulas[Math.floor(Math.random() * titleFormulas.length)];
+  var s = titleSubjects[Math.floor(Math.random() * titleSubjects.length)];
+  var e = titleEndings[Math.floor(Math.random() * titleEndings.length)];
+
+  // 随机组合方式
+  var r = Math.random();
+  if (r < 0.25) {
+    return f.prefix + s + (f.suffix ? f.suffix : '，' + e);
+  } else if (r < 0.5) {
+    return s + '｜' + e;
+  } else if (r < 0.75) {
+    return f.prefix + s + '，' + e;
+  } else {
+    return '分享我的' + s + '，' + e;
+  }
+}
+
+function refreshTitle() {
+  var el = document.getElementById('generated-title');
+  if (el) el.textContent = generateTitle();
+}
+
+function copyGeneratedTitle(el) {
+  var text = el.textContent;
+  navigator.clipboard.writeText(text).then(function() {
+    showToast('标题已复制：' + text);
+  });
 }
 
 function startAddTask() {
