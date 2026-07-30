@@ -406,7 +406,7 @@ for (const modId of Object.keys(DB.subModules)) {
   DB.subModules[modId] = (DB.subModules[modId] || []).filter(function(s) { return defaultSubIds.includes(s.id); });
 }
 
-// 确保子模块存在（补上缺失的默认子模块）
+// 确保子模块存在（按默认顺序补上缺失的默认子模块）
 for (const m of DB.modules) {
   if (!DB.subModules[m.id]) {
     DB.subModules[m.id] = [];
@@ -416,7 +416,10 @@ for (const m of DB.modules) {
     const existingIds = existing.map(function(s) { return s.id; });
     for (const defSub of DEFAULT_SUB_MODULES[m.id]) {
       if (!existingIds.includes(defSub.id)) {
-        existing.push(JSON.parse(JSON.stringify(defSub)));
+        // 按默认顺序插入
+        const insertIdx = DEFAULT_SUB_MODULES[m.id].indexOf(defSub);
+        const targetIdx = Math.min(insertIdx, existing.length);
+        existing.splice(targetIdx, 0, JSON.parse(JSON.stringify(defSub)));
       }
     }
     DB.subModules[m.id] = existing;
@@ -796,19 +799,18 @@ function renderWorkContent() {
     let html = '';
     for (const sub of subs) {
       html += '<div class="section-block section-header sub-card" data-sub-id="' + sub.id + '" draggable="true" ondragstart="dragSubStart(event)" ondragover="dragSubOver(event)" ondrop="dropSubReorder(event,\'work\')" style="cursor:grab;">';
-      html += '<h3 style="font-size:16px;font-weight:600;pointer-events:none;">' + esc(sub.title) + '</h3>';
-      html += '<span style="font-size:12px;color:var(--text-muted);pointer-events:none;">拖拽排序 · 点击进入 →</span>';
+      html += '<h3 style="font-size:16px;font-weight:600;">' + esc(sub.title) + '</h3>';
+      html += '<span style="font-size:12px;color:var(--text-muted);">拖拽排序 · 点击进入 →</span>';
       html += '</div>';
     }
     if (subs.length === 0) html = '<div style="text-align:center;padding:40px;color:var(--text-muted);">暂无子模块，点击右上角添加</div>';
     container.innerHTML = html;
 
-    // 点击进入子模块
+    // 点击进入子模块（拖拽时不触发）
     container.querySelectorAll('.sub-card').forEach(function(card) {
       card.addEventListener('click', function(e) {
-        if (!card.classList.contains('dragging')) {
-          switchSubModule('work', card.dataset.subId);
-        }
+        if (dragDidDrop) { dragDidDrop = false; return; }
+        switchSubModule('work', card.dataset.subId);
       });
     });
   }
@@ -1450,8 +1452,8 @@ function renderDailyContent() {
     let html = '';
     for (const sub of subs) {
       html += '<div class="section-block section-header sub-card" data-sub-id="' + sub.id + '" draggable="true" ondragstart="dragSubStart(event)" ondragover="dragSubOver(event)" ondrop="dropSubReorder(event,\'daily\')" style="cursor:grab;">';
-      html += '<h3 style="font-size:16px;font-weight:600;pointer-events:none;">' + esc(sub.title) + '</h3>';
-      html += '<span style="font-size:12px;color:var(--text-muted);pointer-events:none;">拖拽排序 · 点击进入 →</span>';
+      html += '<h3 style="font-size:16px;font-weight:600;">' + esc(sub.title) + '</h3>';
+      html += '<span style="font-size:12px;color:var(--text-muted);">拖拽排序 · 点击进入 →</span>';
       html += '</div>';
     }
     if (subs.length === 0) html = '<div style="text-align:center;padding:40px;color:var(--text-muted);">暂无子模块，点击右上角添加</div>';
@@ -1459,9 +1461,8 @@ function renderDailyContent() {
 
     container.querySelectorAll('.sub-card').forEach(function(card) {
       card.addEventListener('click', function(e) {
-        if (!card.classList.contains('dragging')) {
-          switchSubModule('daily', card.dataset.subId);
-        }
+        if (dragDidDrop) { dragDidDrop = false; return; }
+        switchSubModule('daily', card.dataset.subId);
       });
     });
   }
@@ -1469,9 +1470,11 @@ function renderDailyContent() {
 
 // ===== 子模块拖拽排序 =====
 let dragSrcSubId = null;
+let dragDidDrop = false;
 
 function dragSubStart(e) {
   dragSrcSubId = e.target.dataset.subId;
+  dragDidDrop = false;
   e.target.classList.add('dragging');
   e.target.style.opacity = '0.5';
   e.dataTransfer.effectAllowed = 'move';
@@ -1484,6 +1487,7 @@ function dragSubOver(e) {
 
 function dropSubReorder(e, modId) {
   e.preventDefault();
+  dragDidDrop = true;
   document.querySelectorAll('.sub-card').forEach(function(c) {
     c.style.opacity = '1';
     c.classList.remove('dragging');
