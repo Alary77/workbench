@@ -209,9 +209,6 @@ body{font-family:'Inter','Noto Sans SC',-apple-system,sans-serif;background:var(
     <span>我的工作台</span>
   </div>
   <nav class="sidebar-nav" id="sidebar-nav"></nav>
-  <div style="padding:6px 12px;flex-shrink:0;">
-    <button class="add-module-btn" onclick="showAddModuleModal()">＋</button>
-  </div>
   <div class="sidebar-footer">
     <button class="btn-export" onclick="exportData()">导出</button>
     <button class="btn-export" onclick="document.getElementById('import-file').click()">导入</button>
@@ -396,6 +393,13 @@ function genId() {
 
 let DB = loadDB();
 let nid = Math.max(0, ...DB.tasks.map(t => t.id || 0), ...DB.scripts.map(s => s.id || 0)) + 1;
+
+// 清理非默认模块（用户之前手动添加的）
+const defaultIds = DEFAULT_MODULES.map(function(d) { return d.id; });
+DB.modules = DB.modules.filter(function(m) { return defaultIds.includes(m.id); });
+for (const k of Object.keys(DB.subModules || {})) {
+  if (!defaultIds.includes(k)) delete DB.subModules[k];
+}
 
 // 确保子模块存在
 for (const m of DB.modules) {
