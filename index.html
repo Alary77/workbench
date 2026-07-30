@@ -426,6 +426,15 @@ for (const m of DB.modules) {
   }
 }
 
+// 同步子模块 title（改名迁移，如 客服话术库→客服话术）
+for (const modId of Object.keys(DB.subModules)) {
+  const defs = DEFAULT_SUB_MODULES[modId] || [];
+  for (const sub of DB.subModules[modId]) {
+    const def = defs.find(function(d) { return d.id === sub.id; });
+    if (def && def.title !== sub.title) sub.title = def.title;
+  }
+}
+
 // 确保数据结构完整
 if (!DB.reviewStats) DB.reviewStats = JSON.parse(JSON.stringify(DEFAULT_REVIEW_STATS));
 if (!DB.dataFields) DB.dataFields = JSON.parse(JSON.stringify(DEFAULT_DATA_FIELDS));
