@@ -608,7 +608,8 @@ function renderTasks() {
       html += '<div class="section-block task-item' + (t.done ? ' task-done' : '') + '" style="display:flex;align-items:center;gap:12px;padding:14px 20px;">';
       html += '<input type="checkbox" style="width:20px;height:20px;accent-color:var(--accent);cursor:pointer;"' + (t.done ? ' checked' : '') + ' onchange="toggleTask(' + t.id + ',this.checked)">';
       html += '<span style="flex:1;font-size:15px;">' + esc(t.text) + badge + '</span>';
-      html += '<button class="btn btn-xs btn-ghost" onclick="deleteTask(' + t.id + ')" style="color:var(--danger);">删除</button>';
+      html += '<button class="btn btn-xs btn-ghost" onclick="editTask(' + t.id + ')" style="color:var(--accent);font-size:12px;">编辑</button>';
+      html += '<button class="btn btn-xs btn-ghost" onclick="deleteTask(' + t.id + ')" style="color:var(--danger);font-size:12px;">删除</button>';
       html += '</div>';
     }
   }
@@ -774,6 +775,29 @@ function toggleTask(id, done) {
 function deleteTask(id) {
   DB.tasks = DB.tasks.filter(t => t.id !== id);
   save(); renderTasks();
+}
+
+function editTask(id) {
+  const t = DB.tasks.find(t => t.id === id);
+  if (!t) return;
+  const weekdayOptions = ['日','一','二','三','四','五','六'].map(function(d, i) {
+    return '<option value="' + i + '"' + (t.weekday === i ? ' selected' : '') + '>周' + d + '</option>';
+  }).join('');
+
+  showModal('编辑任务',
+    '<div class="form-group"><label class="form-label">任务内容</label><input type="text" class="form-input" id="edit-task-text" value="' + escAttr(t.text) + '"></div>' +
+    '<div class="form-group"><label class="form-label">重复频率</label><select class="form-select" id="edit-task-repeat" onchange="document.getElementById(\'edit-task-weekday-group\').style.display=this.value===\'weekly\'?\'flex\':\'none\';"><option value="once"' + (!t.repeat ? ' selected' : '') + '>仅此一次</option><option value="daily"' + (t.repeat === 'daily' ? ' selected' : '') + '>每天</option><option value="weekly"' + (t.repeat === 'weekly' ? ' selected' : '') + '>每周</option></select></div>' +
+    '<div class="form-group" id="edit-task-weekday-group" style="display:' + (t.repeat === 'weekly' ? 'flex' : 'none') + ';"><label class="form-label">星期几</label><select class="form-select" id="edit-task-weekday">' + weekdayOptions + '</select></div>',
+    function() {
+      t.text = document.getElementById('edit-task-text').value.trim();
+      if (!t.text) { alert('任务内容不能为空'); return; }
+      const repeat = document.getElementById('edit-task-repeat').value;
+      if (repeat === 'daily') { t.repeat = 'daily'; t.autoDaily = true; delete t.weekday; }
+      else if (repeat === 'weekly') { t.repeat = 'weekly'; t.weekday = parseInt(document.getElementById('edit-task-weekday').value); delete t.autoDaily; }
+      else { delete t.repeat; delete t.autoDaily; delete t.weekday; }
+      save(); closeModal(); renderTasks();
+    }
+  );
 }
 
 function changeDate(delta) {
