@@ -406,14 +406,20 @@ for (const modId of Object.keys(DB.subModules)) {
   DB.subModules[modId] = (DB.subModules[modId] || []).filter(function(s) { return defaultSubIds.includes(s.id); });
 }
 
-// 确保子模块存在
+// 确保子模块存在（补上缺失的默认子模块）
 for (const m of DB.modules) {
   if (!DB.subModules[m.id]) {
-    if (DEFAULT_SUB_MODULES[m.id]) {
-      DB.subModules[m.id] = JSON.parse(JSON.stringify(DEFAULT_SUB_MODULES[m.id]));
-    } else {
-      DB.subModules[m.id] = [];
+    DB.subModules[m.id] = [];
+  }
+  if (DEFAULT_SUB_MODULES[m.id]) {
+    const existing = DB.subModules[m.id] || [];
+    const existingIds = existing.map(function(s) { return s.id; });
+    for (const defSub of DEFAULT_SUB_MODULES[m.id]) {
+      if (!existingIds.includes(defSub.id)) {
+        existing.push(JSON.parse(JSON.stringify(defSub)));
+      }
     }
+    DB.subModules[m.id] = existing;
   }
 }
 
