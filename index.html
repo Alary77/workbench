@@ -24,7 +24,9 @@ body{font-family:'Inter','Noto Sans SC',-apple-system,sans-serif;background:var(
 .nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;margin-bottom:1px;border-radius:var(--radius-sm);cursor:pointer;transition:all 0.12s;font-size:14px;font-weight:500;color:var(--text-secondary);user-select:none}
 .nav-item:hover{background:#f0f0f0;color:var(--text-primary)}
 .nav-item.active{background:var(--accent-light);color:var(--accent);font-weight:600;box-shadow:inset 2px 0 0 var(--accent)}
-.nav-icon{width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.nav-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:all 0.15s}
+.nav-item.active .nav-dot{width:10px;height:10px;box-shadow:0 0 0 3px var(--accent-light)}
+.nav-label{font-size:13px;letter-spacing:2px;font-weight:600}
 .nav-delete{margin-left:auto;opacity:0;font-size:13px;color:var(--text-muted);cursor:pointer;padding:2px 6px;border-radius:4px;transition:all 0.12s}
 .nav-item:hover .nav-delete{opacity:1}
 .nav-delete:hover{background:var(--danger-bg);color:var(--danger)}
@@ -453,11 +455,17 @@ function renderNav() {
   const nav = document.getElementById('sidebar-nav');
   let html = '';
 
+  const navLabels = {
+    todo: { label: '今 日', color: '#5e5ce6' },
+    work: { label: '工 作', color: '#ff9f0a' },
+    daily: { label: '日 常', color: '#34c759' }
+  };
+
   for (const m of DB.modules) {
-    const subs = DB.subModules[m.id] || [];
+    const cfg = navLabels[m.id] || { label: m.name, color: '#8e8e93' };
     html += '<div class="nav-item' + (activeModule === m.id ? ' active' : '') + '" onclick="switchModule(\'' + m.id + '\')">';
-    html += '<span class="nav-icon">' + esc(m.icon) + '</span>';
-    html += '<span>' + esc(m.name) + '</span>';
+    html += '<span class="nav-dot" style="background:' + cfg.color + ';"></span>';
+    html += '<span class="nav-label">' + esc(cfg.label) + '</span>';
     if (m.deletable) {
       html += '<span class="nav-delete" onclick="event.stopPropagation();deleteModule(\'' + m.id + '\')">×</span>';
     }
@@ -715,23 +723,54 @@ function showInspirationModal() {
   showModal('添加灵感',
     '<div class="form-group"><label class="form-label">标签</label><select class="form-select" id="insp-tag"><option>内容选题</option><option>视频创意</option><option>生活灵感</option><option>学习心得</option><option>其他</option></select></div>' +
     '<div class="form-group"><label class="form-label">灵感内容</label><div class="voice-row"><textarea class="form-textarea" id="insp-content" placeholder="写下你的灵感片段...（可语音输入）" style="min-height:120px;"></textarea><button class="btn-voice" id="voice-insp-content" onclick="startVoice(\'insp-content\',\'voice-insp-content\')">🎤</button></div></div>' +
-    '<div class="form-group"><label class="form-label">图片链接（选填）</label><input type="text" class="form-input" id="insp-image" placeholder="粘贴图片URL..."></div>',
+    '<div class="form-group"><label class="form-label">图片（选填）</label>' +
+    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' +
+    '<input type="text" class="form-input" id="insp-image" placeholder="粘贴图片URL..." style="flex:1;min-width:150px;">' +
+    '<span style="color:var(--text-muted);font-size:12px;">或</span>' +
+    '<label class="btn btn-ghost" style="cursor:pointer;border:1px solid var(--border);padding:8px 14px;font-size:13px;margin:0;">📷 本地上传<input type="file" accept="image/*" id="insp-img-upload" style="display:none;" onchange="handleInspImgUpload(this)"></label>' +
+    '</div>' +
+    '<div id="insp-img-preview" style="margin-top:8px;display:none;"><img id="insp-img-preview-img" style="max-width:100%;max-height:150px;border-radius:8px;"></div></div>',
     function() {
       const tag = document.getElementById('insp-tag').value;
       const content = document.getElementById('insp-content').value.trim();
-      const image = document.getElementById('insp-image').value.trim();
       if (!content) { alert('请输入灵感内容'); return; }
       if (!DB.inspirations) DB.inspirations = [];
+
+      let image = null;
+      const uploadData = document.getElementById('insp-img-upload')._imgData;
+      if (uploadData) {
+        image = uploadData;
+      } else {
+        const url = document.getElementById('insp-image').value.trim();
+        if (url) image = url;
+      }
+
       DB.inspirations.unshift({
         id: genId(),
         tag: tag,
         content: content,
-        image: image || null,
+        image: image,
         date: todayStr()
       });
       save(); closeModal(); renderPage();
     }
   );
+}
+
+function handleInspImgUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    input._imgData = e.target.result;
+    const preview = document.getElementById('insp-img-preview');
+    const img = document.getElementById('insp-img-preview-img');
+    if (preview && img) {
+      img.src = e.target.result;
+      preview.style.display = 'block';
+    }
+  };
+  reader.readAsDataURL(file);
 }
 
 function deleteInspiration(id) {
