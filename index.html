@@ -256,7 +256,6 @@ body{font-family:'Inter','Noto Sans SC',-apple-system,sans-serif;background:var(
         <div class="page-title">工作</div>
         <div class="page-subtitle">选题灵感 · 客服话术库 · 每日数据 · 每周复盘</div>
       </div>
-      <button class="add-module-btn" style="width:auto;padding:7px 16px;" onclick="showAddSubModal()">+ 添加子模块</button>
     </div>
     <div id="work-content"></div>
   </div>
@@ -268,7 +267,6 @@ body{font-family:'Inter','Noto Sans SC',-apple-system,sans-serif;background:var(
         <div class="page-title">日常</div>
         <div class="page-subtitle">运动记录 · 社交时间 · 读书笔记</div>
       </div>
-      <button class="add-module-btn" style="width:auto;padding:7px 16px;" onclick="showAddSubModal()">+ 添加子模块</button>
     </div>
     <div id="daily-content"></div>
   </div>
@@ -399,6 +397,12 @@ const defaultIds = DEFAULT_MODULES.map(function(d) { return d.id; });
 DB.modules = DB.modules.filter(function(m) { return defaultIds.includes(m.id); });
 for (const k of Object.keys(DB.subModules || {})) {
   if (!defaultIds.includes(k)) delete DB.subModules[k];
+}
+// 清理用户手动添加的子模块，只保留默认的
+for (const modId of Object.keys(DB.subModules)) {
+  const defaultSubs = DEFAULT_SUB_MODULES[modId] || [];
+  const defaultSubIds = defaultSubs.map(function(s) { return s.id; });
+  DB.subModules[modId] = (DB.subModules[modId] || []).filter(function(s) { return defaultSubIds.includes(s.id); });
 }
 
 // 确保子模块存在
