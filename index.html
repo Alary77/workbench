@@ -936,17 +936,15 @@ function editInspiration(id) {
 function handleInspImgUpload(input) {
   const file = input.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    input._imgData = e.target.result;
+  compressImage(file, 800, 0.6, function(dataUrl) {
+    input._imgData = dataUrl;
     const preview = document.getElementById('insp-img-preview');
     const img = document.getElementById('insp-img-preview-img');
     if (preview && img) {
-      img.src = e.target.result;
+      img.src = dataUrl;
       preview.style.display = 'block';
     }
-  };
-  reader.readAsDataURL(file);
+  });
 }
 
 function deleteInspiration(id) {
@@ -1082,12 +1080,31 @@ function editDraft(id) { showDraftModal(id); }
 function handleDraftImgUpload(input) {
   const file = input.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    input._imgData = e.target.result;
+  // 压缩大图，避免 localStorage 溢出
+  compressImage(file, 800, 0.6, function(dataUrl) {
+    input._imgData = dataUrl;
     const preview = document.getElementById('draft-img-preview');
     const img = document.getElementById('draft-img-preview-img');
-    if (preview && img) { img.src = e.target.result; preview.style.display = 'block'; }
+    if (preview && img) { img.src = dataUrl; preview.style.display = 'block'; }
+  });
+}
+
+// 通用图片压缩函数
+function compressImage(file, maxW, quality, callback) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      let w = img.width, h = img.height;
+      if (w > maxW) { h = h * maxW / w; w = maxW; }
+      if (h > maxW) { w = w * maxW / h; h = maxW; }
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      callback(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
