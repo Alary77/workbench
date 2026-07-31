@@ -1033,11 +1033,13 @@ function renderDraftsContent() {
       // 标题行 + 复制按钮
       html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">';
       html += '<span style="font-weight:600;font-size:15px;flex:1;">' + esc(title) + '</span>';
-      html += '<span style="cursor:pointer;color:var(--accent);font-size:11px;white-space:nowrap;" onclick="copyToClipboard(\'' + escAttr(title) + '\')">📋 复制标题</span>';
+      html += '<span style="cursor:pointer;color:var(--accent);font-size:11px;white-space:nowrap;" onclick="copyTextById(\'' + item.id + '_title\')">📋 复制标题</span>';
+      html += '<textarea id="' + item.id + '_title" style="display:none;">' + esc(title) + '</textarea>';
       html += '</div>';
       // 正文 + 复制按钮
       html += '<div style="font-size:13px;line-height:1.6;white-space:pre-wrap;color:var(--text-secondary);margin-bottom:6px;">' + esc(content.substring(0, 200)) + (content.length > 200 ? '...' : '') + '</div>';
-      html += '<span style="cursor:pointer;color:var(--accent);font-size:11px;" onclick="copyToClipboard(\'' + escAttr(content) + '\')">📋 复制正文</span>';
+      html += '<span style="cursor:pointer;color:var(--accent);font-size:11px;" onclick="copyTextById(\'' + item.id + '_content\')">📋 复制正文</span>';
+      html += '<textarea id="' + item.id + '_content" style="display:none;">' + esc(content) + '</textarea>';
       // 缩略图
       if (item.image) {
         html += '<div style="margin-top:8px;"><img src="' + escAttr(item.image) + '" style="max-width:100%;max-height:160px;border-radius:8px;display:block;" onerror="this.style.display=\'none\'"></div>';
@@ -1056,7 +1058,10 @@ function renderDraftsContent() {
   return html;
 }
 
-function copyToClipboard(text) {
+function copyTextById(elId) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const text = el.value;
   navigator.clipboard.writeText(text).then(function() {
     showToast('已复制');
   }).catch(function() {
