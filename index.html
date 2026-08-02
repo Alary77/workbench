@@ -759,7 +759,7 @@ function showTaskModal() {
         task.weekday = parseInt(document.getElementById('task-weekday').value);
       }
 
-      DB.tasks.push(task);
+      DB.tasks.unshift(task);
       save(); closeModal();
       document.getElementById('task-input-text').value = '';
       renderTasks(); cancelAddTask();
@@ -1223,11 +1223,12 @@ function renderScriptsContent() {
       html += '<span style="font-weight:600;font-size:15px;">' + esc(group.name) + '</span>';
       html += '<span style="font-size:12px;color:var(--text-muted);margin-left:auto;">' + groupScripts.length + ' 条</span>';
       html += '</div>';
-      html += '<div class="script-group-body" style="display:block;">';
+      html += '<div class="script-group-body" style="display:none;">';
 
       for (const s of groupScripts) {
-        html += '<div class="section-block script-item" style="margin-bottom:8px;margin-left:16px;">';
+        html += '<div class="section-block script-item" data-script-id="' + s.id + '" data-category="' + escAttr(s.category) + '" style="margin-bottom:8px;margin-left:16px;cursor:grab;">';
         html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">';
+        html += '<span style="font-size:16px;color:var(--text-muted);cursor:grab;">⋮⋮</span>';
         html += '<span style="font-size:11px;background:var(--accent-light);color:var(--accent);padding:2px 8px;border-radius:10px;">' + esc(s.category) + '</span>';
         html += '<span style="font-weight:600;font-size:15px;">' + esc(s.title) + '</span>';
         html += '</div>';
@@ -1252,10 +1253,88 @@ function toggleScriptGroup(header) {
   if (body.style.display === 'none') {
     body.style.display = 'block';
     arrow.style.transform = 'rotate(90deg)';
+    // 启用拖拽排序
+    enableScriptDragSort(body);
   } else {
     body.style.display = 'none';
     arrow.style.transform = 'rotate(0deg)';
   }
+}
+
+// 话术拖拽排序（长按触发）
+function enableScriptDragSort(container) {
+  const items = container.querySelectorAll('.script-item');
+  let longPressTimer = null;
+  let dragItem = null;
+  let startY = 0;
+  let itemOffsetY = 0;
+
+  items.forEach(function(item) {
+    item.addEventListener('pointerdown', function(e) {
+      // 忽略按钮点击
+      if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+      longPressTimer = setTimeout(function() {
+        dragItem = item;
+        item.style.opacity = '0.5';
+        const rect = item.getBoundingClientRect();
+        startY = e.clientY;
+        itemOffsetY = startY - rect.top;
+        item.style.position = 'fixed';
+        item.style.left = rect.left + 'px';
+        item.style.top = rect.top + 'px';
+        item.style.width = rect.width + 'px';
+        item.style.zIndex = '100';
+        item.style.pointerEvents = 'none';
+      }, 400);
+    });
+
+    item.addEventListener('pointermove', function(e) {
+      if (!dragItem || dragItem !== item) return;
+      item.style.top = (e.clientY - itemOffsetY) + 'px';
+    });
+
+    item.addEventListener('pointerup', function(e) {
+      clearTimeout(longPressTimer);
+      if (!dragItem || dragItem !== item) return;
+
+      item.style.opacity = '1';
+      item.style.position = '';
+      item.style.left = '';
+      item.style.top = '';
+      item.style.width = '';
+      item.style.zIndex = '';
+      item.style.pointerEvents = '';
+
+      // 找到目标位置
+      const allItems = container.querySelectorAll('.script-item');
+      let targetId = null;
+      allItems.forEach(function(other) {
+        if (other === item) return;
+        const r = other.getBoundingClientRect();
+        if (e.clientY > r.top && e.clientY < r.bottom) {
+          targetId = parseInt(other.dataset.scriptId);
+        }
+      });
+
+      if (targetId !== null && targetId !== parseInt(item.dataset.scriptId)) {
+        const scripts = DB.scripts;
+        const srcIdx = scripts.findIndex(function(s) { return s.id === parseInt(item.dataset.scriptId); });
+        const dstIdx = scripts.findIndex(function(s) { return s.id === targetId; });
+        if (srcIdx >= 0 && dstIdx >= 0) {
+          const moved = scripts.splice(srcIdx, 1)[0];
+          scripts.splice(dstIdx, 0, moved);
+          save();
+          renderPage();
+        }
+      }
+
+      dragItem = null;
+    });
+
+    item.addEventListener('pointerleave', function() {
+      clearTimeout(longPressTimer);
+    });
+  });
 }
 
 function copyScriptContent(id) {
