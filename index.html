@@ -1171,8 +1171,10 @@ function deleteDraft(id) {
 }
 
 // ===== 客服话术 =====
+let scriptSortMode = false;
+
 function renderScriptsContent() {
-  let html = '<div class="page-header"><div class="page-title">客服话术</div><div style="display:flex;gap:8px;"><button class="btn btn-primary" onclick="showScriptModal()">+ 添加话术</button><button class="btn btn-ghost" onclick="exportScripts()" style="border:1px solid var(--border);">📤 导出话术</button></div></div>';
+  let html = '<div class="page-header"><div class="page-title">客服话术</div><div style="display:flex;gap:8px;align-items:center;"><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text-secondary);cursor:pointer;white-space:nowrap;"><input type="checkbox" id="script-sort-toggle" style="width:16px;height:16px;accent-color:var(--accent);"' + (scriptSortMode ? ' checked' : '') + ' onchange="toggleScriptSortMode()"> 调序</label><button class="btn btn-primary" onclick="showScriptModal()">+ 添加话术</button><button class="btn btn-ghost" onclick="exportScripts()" style="border:1px solid var(--border);">📤 导出话术</button></div></div>';
 
   html += '<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">';
   html += '<input type="text" class="form-input" id="script-search" placeholder="搜索话术..." oninput="renderScriptsContent()" style="max-width:300px;">';
@@ -1226,9 +1228,11 @@ function renderScriptsContent() {
       html += '<div class="script-group-body" style="display:none;">';
 
       for (const s of groupScripts) {
-        html += '<div class="section-block script-item" data-script-id="' + s.id + '" data-category="' + escAttr(s.category) + '" style="margin-bottom:8px;margin-left:16px;cursor:grab;">';
+        html += '<div class="section-block script-item" data-script-id="' + s.id + '" data-category="' + escAttr(s.category) + '" style="margin-bottom:8px;margin-left:16px;' + (scriptSortMode ? 'cursor:grab;border:1px dashed var(--accent);' : '') + '">';
         html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">';
-        html += '<span style="font-size:16px;color:var(--text-muted);cursor:grab;">⋮⋮</span>';
+        if (scriptSortMode) {
+          html += '<span style="font-size:16px;color:var(--accent);">⋮⋮</span>';
+        }
         html += '<span style="font-size:11px;background:var(--accent-light);color:var(--accent);padding:2px 8px;border-radius:10px;">' + esc(s.category) + '</span>';
         html += '<span style="font-weight:600;font-size:15px;">' + esc(s.title) + '</span>';
         html += '</div>';
@@ -1253,32 +1257,50 @@ function toggleScriptGroup(header) {
   if (body.style.display === 'none') {
     body.style.display = 'block';
     arrow.style.transform = 'rotate(90deg)';
-    // 启用拖拽排序
-    enableScriptDragSort(body);
+    if (scriptSortMode) enableScriptDragSort(body);
   } else {
     body.style.display = 'none';
     arrow.style.transform = 'rotate(0deg)';
   }
 }
 
-// 话术拖拽排序（长按触发）
+function toggleScriptSortMode() {
+  scriptSortMode = !scriptSortMode;
+  if (scriptSortMode) showToast('调序模式已开启，长按拖拽话术可调整顺序');
+  else showToast('调序模式已关闭');
+  renderPage();
+  // 重新展开所有已展开的组并启用拖拽
+  document.querySelectorAll('.script-group-body').forEach(function(body) {
+    if (body.style.display !== 'none' && scriptSortMode) {
+      enableScriptDragSort(body);
+    }
+  });
+}
+
+// 话术拖拽排序（仅在调序模式下生效，长按触发）
 function enableScriptDragSort(container) {
   const items = container.querySelectorAll('.script-item');
   let longPressTimer = null;
   let dragItem = null;
-  let startY = 0;
-  let itemOffsetY = 0;
 
   items.forEach(function(item) {
+    let isDragging = false;
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let itemOffsetY = 0;
+
     item.addEventListener('pointerdown', function(e) {
-      // 忽略按钮点击
+      if (!scriptSortMode) return;
       if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+      touchStartX = e.clientX;
+      touchStartY = e.clientY;
+      isDragging = false;
       longPressTimer = setTimeout(function() {
+        isDragging = true;
         dragItem = item;
         item.style.opacity = '0.5';
         const rect = item.getBoundingClientRect();
-        startY = e.clientY;
-        itemOffsetY = startY - rect.top;
+        itemOffsetY = e.clientY - rect.top;
         item.style.position = 'fixed';
         item.style.left = rect.left + 'px';
         item.style.top = rect.top + 'px';
@@ -1290,12 +1312,26 @@ function enableScriptDragSort(container) {
 
     item.addEventListener('pointermove', function(e) {
       if (!dragItem || dragItem !== item) return;
-      item.style.top = (e.clientY - itemOffsetY) + 'px';
+      if (!isDragging) {
+        const dx = Math.abs(e.clientX - touchStartX);
+        const dy = Math.abs(e.clientY - touchStartY);
+        if (dx > 10 || dy > 10) {
+          clearTimeout(longPressTimer);
+          dragItem = null;
+          return;
+        }
+      } else {
+        item.style.top = (e.clientY - itemOffsetY) + 'px';
+      }
     });
 
     item.addEventListener('pointerup', function(e) {
       clearTimeout(longPressTimer);
-      if (!dragItem || dragItem !== item) return;
+      if (!isDragging || !dragItem || dragItem !== item) {
+        dragItem = null;
+        isDragging = false;
+        return;
+      }
 
       item.style.opacity = '1';
       item.style.position = '';
@@ -1305,7 +1341,6 @@ function enableScriptDragSort(container) {
       item.style.zIndex = '';
       item.style.pointerEvents = '';
 
-      // 找到目标位置
       const allItems = container.querySelectorAll('.script-item');
       let targetId = null;
       allItems.forEach(function(other) {
@@ -1325,10 +1360,15 @@ function enableScriptDragSort(container) {
           scripts.splice(dstIdx, 0, moved);
           save();
           renderPage();
+          // 重新展开当前组
+          document.querySelectorAll('.script-group-body').forEach(function(body) {
+            if (body.style.display !== 'none' && scriptSortMode) enableScriptDragSort(body);
+          });
         }
       }
 
       dragItem = null;
+      isDragging = false;
     });
 
     item.addEventListener('pointerleave', function() {
