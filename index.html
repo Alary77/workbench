@@ -1172,6 +1172,7 @@ function deleteDraft(id) {
 
 // ===== 客服话术 =====
 let scriptSortMode = false;
+let scriptGroupOrder = [];
 
 function renderScriptsContent() {
   let html = '<div class="page-header"><div class="page-title">客服话术</div><div style="display:flex;gap:8px;align-items:center;"><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text-secondary);cursor:pointer;white-space:nowrap;"><input type="checkbox" id="script-sort-toggle" style="width:16px;height:16px;accent-color:var(--accent);"' + (scriptSortMode ? ' checked' : '') + ' onchange="toggleScriptSortMode()"> 调序</label><button class="btn btn-primary" onclick="showScriptModal()">+ 添加话术</button><button class="btn btn-ghost" onclick="exportScripts()" style="border:1px solid var(--border);">📤 导出话术</button></div></div>';
@@ -1194,8 +1195,7 @@ function renderScriptsContent() {
   if (search) scripts = scripts.filter(s => s.title.toLowerCase().includes(search) || s.content.toLowerCase().includes(search));
   if (filter) scripts = scripts.filter(s => s.category === filter);
 
-  // 大类分组定义：把子分类归入大类
-  const bigGroups = [
+  const allGroups = [
     { id: 'pre_sale', name: '售前', color: '#9888c0', categories: ['售前'] },
     { id: 'after_sale', name: '售后', color: '#d47a7a', categories: ['售后'] },
     { id: 'promotion', name: '促单', color: '#e8986e', categories: ['促单'] },
@@ -1204,37 +1204,60 @@ function renderScriptsContent() {
     { id: 'other', name: '其他', color: '#b0acba', categories: [] }
   ];
 
-  // 把未归入上面大类的分类放入"其他"
-  const knownCats = bigGroups.flatMap(function(g) { return g.categories; });
+  const knownCats = allGroups.flatMap(function(g) { return g.categories; });
   const otherCats = cats.filter(function(c) { return !knownCats.includes(c); });
   if (otherCats.length > 0) {
-    bigGroups[4].categories = otherCats;
+    allGroups[5].categories = otherCats;
+  }
+
+  let bigGroups = [];
+  if (scriptGroupOrder.length > 0) {
+    for (const gid of scriptGroupOrder) {
+      const g = allGroups.find(function(x) { return x.id === gid; });
+      if (g) bigGroups.push(g);
+    }
+    for (const g of allGroups) {
+      if (!scriptGroupOrder.includes(g.id)) bigGroups.push(g);
+    }
+  } else {
+    bigGroups = allGroups;
   }
 
   if (scripts.length === 0) {
     html += '<div style="text-align:center;padding:40px;color:var(--text-muted);">没有匹配的话术</div>';
   } else {
-    for (const group of bigGroups) {
+    for (let gi = 0; gi < bigGroups.length; gi++) {
+      const group = bigGroups[gi];
       const groupScripts = scripts.filter(function(s) { return group.categories.includes(s.category); });
       if (groupScripts.length === 0) continue;
 
-      html += '<div style="margin-bottom:20px;">';
+      html += '<div style="margin-bottom:20px;" data-group-id="' + group.id + '">';
       html += '<div class="script-group-header" onclick="toggleScriptGroup(this)" style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--card-bg);border-radius:var(--radius);border:1px solid var(--border);cursor:pointer;margin-bottom:8px;">';
       html += '<span style="font-size:12px;transition:transform 0.2s;display:inline-block;" class="group-arrow">▶</span>';
       html += '<span style="width:8px;height:8px;border-radius:50%;background:' + group.color + ';flex-shrink:0;"></span>';
       html += '<span style="font-weight:600;font-size:15px;">' + esc(group.name) + '</span>';
       html += '<span style="font-size:12px;color:var(--text-muted);margin-left:auto;">' + groupScripts.length + ' 条</span>';
+      if (scriptSortMode) {
+        html += '<span style="display:flex;gap:4px;margin-left:8px;" onclick="event.stopPropagation();">';
+        html += '<button class="btn btn-xs btn-ghost" onclick="moveScriptGroup(\'' + group.id + '\',-1)" style="padding:2px 8px;font-size:14px;' + (gi === 0 ? 'opacity:0.3;pointer-events:none;' : '') + '">↑</button>';
+        html += '<button class="btn btn-xs btn-ghost" onclick="moveScriptGroup(\'' + group.id + '\',1)" style="padding:2px 8px;font-size:14px;' + (gi === bigGroups.length - 1 ? 'opacity:0.3;pointer-events:none;' : '') + '">↓</button>';
+        html += '</span>';
+      }
       html += '</div>';
       html += '<div class="script-group-body" style="display:none;">';
 
-      for (const s of groupScripts) {
-        html += '<div class="section-block script-item" data-script-id="' + s.id + '" data-category="' + escAttr(s.category) + '" style="margin-bottom:8px;margin-left:16px;' + (scriptSortMode ? 'cursor:grab;border:1px dashed var(--accent);' : '') + '">';
+      for (let si = 0; si < groupScripts.length; si++) {
+        const s = groupScripts[si];
+        html += '<div class="section-block script-item" data-script-id="' + s.id + '" style="margin-bottom:8px;margin-left:16px;' + (scriptSortMode ? 'border:1px dashed var(--accent);' : '') + '">';
         html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">';
-        if (scriptSortMode) {
-          html += '<span style="font-size:16px;color:var(--accent);">⋮⋮</span>';
-        }
         html += '<span style="font-size:11px;background:var(--accent-light);color:var(--accent);padding:2px 8px;border-radius:10px;">' + esc(s.category) + '</span>';
-        html += '<span style="font-weight:600;font-size:15px;">' + esc(s.title) + '</span>';
+        html += '<span style="font-weight:600;font-size:15px;flex:1;">' + esc(s.title) + '</span>';
+        if (scriptSortMode) {
+          html += '<span style="display:flex;gap:4px;flex-shrink:0;">';
+          html += '<button class="btn btn-xs btn-ghost" onclick="moveScript(' + s.id + ',-1)" style="padding:2px 8px;font-size:14px;' + (si === 0 ? 'opacity:0.3;pointer-events:none;' : '') + '">↑</button>';
+          html += '<button class="btn btn-xs btn-ghost" onclick="moveScript(' + s.id + ',1)" style="padding:2px 8px;font-size:14px;' + (si === groupScripts.length - 1 ? 'opacity:0.3;pointer-events:none;' : '') + '">↓</button>';
+          html += '</span>';
+        }
         html += '</div>';
         html += '<div class="script-content" style="font-size:14px;line-height:1.7;white-space:pre-wrap;margin-bottom:10px;color:var(--text-secondary);">' + esc(s.content) + '</div>';
         html += '<div style="display:flex;gap:8px;">';
@@ -1257,7 +1280,6 @@ function toggleScriptGroup(header) {
   if (body.style.display === 'none') {
     body.style.display = 'block';
     arrow.style.transform = 'rotate(90deg)';
-    if (scriptSortMode) enableScriptDragSort(body);
   } else {
     body.style.display = 'none';
     arrow.style.transform = 'rotate(0deg)';
@@ -1266,115 +1288,44 @@ function toggleScriptGroup(header) {
 
 function toggleScriptSortMode() {
   scriptSortMode = !scriptSortMode;
-  if (scriptSortMode) showToast('调序模式已开启，长按拖拽话术可调整顺序');
-  else showToast('调序模式已关闭');
+  showToast(scriptSortMode ? '调序模式已开启' : '调序模式已关闭');
   renderPage();
-  // 重新展开所有已展开的组并启用拖拽
-  document.querySelectorAll('.script-group-body').forEach(function(body) {
-    if (body.style.display !== 'none' && scriptSortMode) {
-      enableScriptDragSort(body);
-    }
-  });
+  if (scriptSortMode) {
+    document.querySelectorAll('.script-group-body').forEach(function(b) { b.style.display = 'block'; });
+    document.querySelectorAll('.group-arrow').forEach(function(a) { a.style.transform = 'rotate(90deg)'; });
+  }
 }
 
-// 话术拖拽排序（仅在调序模式下生效，长按触发）
-function enableScriptDragSort(container) {
-  const items = container.querySelectorAll('.script-item');
-  let longPressTimer = null;
-  let dragItem = null;
+function moveScript(id, dir) {
+  const scripts = DB.scripts;
+  const idx = scripts.findIndex(function(s) { return s.id === id; });
+  if (idx < 0) return;
+  const target = idx + dir;
+  if (target < 0 || target >= scripts.length) return;
+  if (scripts[idx].category !== scripts[target].category) return;
+  const tmp = scripts[idx];
+  scripts[idx] = scripts[target];
+  scripts[target] = tmp;
+  save();
+  renderPage();
+  document.querySelectorAll('.script-group-body').forEach(function(b) { b.style.display = 'block'; });
+  document.querySelectorAll('.group-arrow').forEach(function(a) { a.style.transform = 'rotate(90deg)'; });
+}
 
-  items.forEach(function(item) {
-    let isDragging = false;
-    let touchStartX = 0;
-    let touchStartY = 0;
-    let itemOffsetY = 0;
-
-    item.addEventListener('pointerdown', function(e) {
-      if (!scriptSortMode) return;
-      if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
-      touchStartX = e.clientX;
-      touchStartY = e.clientY;
-      isDragging = false;
-      longPressTimer = setTimeout(function() {
-        isDragging = true;
-        dragItem = item;
-        item.style.opacity = '0.5';
-        const rect = item.getBoundingClientRect();
-        itemOffsetY = e.clientY - rect.top;
-        item.style.position = 'fixed';
-        item.style.left = rect.left + 'px';
-        item.style.top = rect.top + 'px';
-        item.style.width = rect.width + 'px';
-        item.style.zIndex = '100';
-        item.style.pointerEvents = 'none';
-      }, 400);
-    });
-
-    item.addEventListener('pointermove', function(e) {
-      if (!dragItem || dragItem !== item) return;
-      if (!isDragging) {
-        const dx = Math.abs(e.clientX - touchStartX);
-        const dy = Math.abs(e.clientY - touchStartY);
-        if (dx > 10 || dy > 10) {
-          clearTimeout(longPressTimer);
-          dragItem = null;
-          return;
-        }
-      } else {
-        item.style.top = (e.clientY - itemOffsetY) + 'px';
-      }
-    });
-
-    item.addEventListener('pointerup', function(e) {
-      clearTimeout(longPressTimer);
-      if (!isDragging || !dragItem || dragItem !== item) {
-        dragItem = null;
-        isDragging = false;
-        return;
-      }
-
-      item.style.opacity = '1';
-      item.style.position = '';
-      item.style.left = '';
-      item.style.top = '';
-      item.style.width = '';
-      item.style.zIndex = '';
-      item.style.pointerEvents = '';
-
-      const allItems = container.querySelectorAll('.script-item');
-      let targetId = null;
-      allItems.forEach(function(other) {
-        if (other === item) return;
-        const r = other.getBoundingClientRect();
-        if (e.clientY > r.top && e.clientY < r.bottom) {
-          targetId = parseInt(other.dataset.scriptId);
-        }
-      });
-
-      if (targetId !== null && targetId !== parseInt(item.dataset.scriptId)) {
-        const scripts = DB.scripts;
-        const srcIdx = scripts.findIndex(function(s) { return s.id === parseInt(item.dataset.scriptId); });
-        const dstIdx = scripts.findIndex(function(s) { return s.id === targetId; });
-        if (srcIdx >= 0 && dstIdx >= 0) {
-          const moved = scripts.splice(srcIdx, 1)[0];
-          scripts.splice(dstIdx, 0, moved);
-          save();
-          renderPage();
-          // 重新展开当前组
-          document.querySelectorAll('.script-group-body').forEach(function(body) {
-            if (body.style.display !== 'none' && scriptSortMode) enableScriptDragSort(body);
-          });
-        }
-      }
-
-      dragItem = null;
-      isDragging = false;
-    });
-
-    item.addEventListener('pointerleave', function() {
-      clearTimeout(longPressTimer);
-    });
-  });
+function moveScriptGroup(gid, dir) {
+  if (scriptGroupOrder.length === 0) {
+    scriptGroupOrder = ['pre_sale','after_sale','promotion','faq','notice','other'];
+  }
+  const idx = scriptGroupOrder.indexOf(gid);
+  if (idx < 0) return;
+  const target = idx + dir;
+  if (target < 0 || target >= scriptGroupOrder.length) return;
+  const tmp = scriptGroupOrder[idx];
+  scriptGroupOrder[idx] = scriptGroupOrder[target];
+  scriptGroupOrder[target] = tmp;
+  renderPage();
+  document.querySelectorAll('.script-group-body').forEach(function(b) { b.style.display = 'block'; });
+  document.querySelectorAll('.group-arrow').forEach(function(a) { a.style.transform = 'rotate(90deg)'; });
 }
 
 function copyScriptContent(id) {
@@ -1406,7 +1357,7 @@ function showScriptModal(editId) {
         s.title = title;
         s.content = content;
       } else {
-        DB.scripts.push({ id: nid++, category: cat, title: title, content: content });
+        DB.scripts.unshift({ id: nid++, category: cat, title: title, content: content });
       }
       save(); closeModal(); renderPage();
     }
