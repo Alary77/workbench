@@ -582,7 +582,7 @@ function renderPage() {
 
 // ===== 待办事项 =====
 function renderTasks() {
-  document.getElementById('date-display').textContent = formatDate(currentDate) + ' 周' + getWeekday(currentDate);
+  document.getElementById('date-display').innerHTML = formatDate(currentDate) + '<br><span style="font-size:13px;color:var(--text-muted);">周' + getWeekday(currentDate) + '</span>';
   document.getElementById('todo-date-label').textContent = '管理你的每日任务';
 
   const list = DB.tasks.filter(t => t.date === currentDate);
@@ -1536,12 +1536,43 @@ function renderDailyContent() {
   } else {
     let html = '';
     for (const sub of subs) {
+      // 预览今天的记录
+      let preview = '';
+      if (sub.type === 'sport') {
+        const list = (DB.sports || []).filter(s => s.date === currentDate);
+        if (list.length > 0) {
+          preview = list.map(s => esc(s.type) + ' ' + s.duration + 'min').join('、');
+        }
+      } else if (sub.type === 'social') {
+        const list = (DB.socials || []).filter(s => s.date === currentDate);
+        if (list.length > 0) {
+          preview = list.map(s => '和' + esc(s.who) + '·' + esc(s.what)).join('、');
+        }
+      } else if (sub.type === 'reading') {
+        const books = DB.books || [];
+        const todayNotes = [];
+        for (const b of books) {
+          for (const n of (b.notes || [])) {
+            if (n.date === currentDate) todayNotes.push(esc(b.title) + '：' + esc((n.text || '').substring(0, 30)));
+          }
+        }
+        if (todayNotes.length > 0) preview = todayNotes.join('；');
+        else if (books.length > 0) preview = '在读 ' + books.length + ' 本书';
+      }
+
       html += '<div class="section-block section-header sub-card" data-sub-id="' + sub.id + '" style="cursor:grab;">';
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;">';
       html += '<h3 style="font-size:16px;font-weight:600;">' + esc(sub.title) + '</h3>';
-      html += '<span style="font-size:12px;color:var(--text-muted);">长按拖拽排序 · 点击进入 →</span>';
+      html += '<span style="font-size:11px;color:var(--text-muted);">点击进入 →</span>';
+      html += '</div>';
+      if (preview) {
+        html += '<div style="font-size:12px;color:var(--text-secondary);margin-top:6px;line-height:1.5;">' + preview + '</div>';
+      } else {
+        html += '<div style="font-size:12px;color:var(--text-muted);margin-top:6px;">今天暂无记录</div>';
+      }
       html += '</div>';
     }
-    if (subs.length === 0) html = '<div style="text-align:center;padding:40px;color:var(--text-muted);">暂无子模块，点击右上角添加</div>';
+    if (subs.length === 0) html = '<div style="text-align:center;padding:40px;color:var(--text-muted);">暂无子模块</div>';
     container.innerHTML = html;
 
     container.querySelectorAll('.sub-card').forEach(function(card) {
