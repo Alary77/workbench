@@ -337,47 +337,47 @@ function loadDailyQuote(dateStr) {
   var el = document.getElementById('daily-quote');
   if (!el) return;
 
-  // 先检查缓存（同一天的直接用）
+  // 检查缓存（同一天直接用）
   if (_quoteCache[dateStr]) {
     el.textContent = _quoteCache[dateStr];
     return;
   }
 
-  // 后备句子库（联网失败时用，根据日期选取）
+  // 后备诗词库（联网失败时用，根据日期选取）
   var fallback = [
-    '愿你眼中有星辰大海，心中有繁花似锦。',
-    '岁月不饶人，我亦未曾饶过岁月。',
-    '你站在桥上看风景，看风景人在楼上看你。',
-    '每一个不曾起舞的日子，都是对生命的辜负。',
-    '人生如逆旅，我亦是行人。',
-    '愿所有的美好都如约而至，所有的努力都有回报。',
-    '于无声处听惊雷，于无色处见繁花。',
-    '心有猛虎，细嗅蔷薇。',
-    '你来人间一趟，你要看看太阳。',
-    '面朝大海，春暖花开。'
+    { content: '行到水穷处，坐看云起时。', origin: '终南别业', author: '王维' },
+    { content: '采菊东篱下，悠然见南山。', origin: '饮酒·其五', author: '陶渊明' },
+    { content: '海内存知己，天涯若比邻。', origin: '送杜少府之任蜀州', author: '王勃' },
+    { content: '明月松间照，清泉石上流。', origin: '山居秋暝', author: '王维' },
+    { content: '落霞与孤鹜齐飞，秋水共长天一色。', origin: '滕王阁序', author: '王勃' },
+    { content: '人生如逆旅，我亦是行人。', origin: '临江仙·送钱穆父', author: '苏轼' },
+    { content: '曾经沧海难为水，除却巫山不是云。', origin: '离思五首·其四', author: '元稹' },
+    { content: '春风得意马蹄疾，一日看尽长安花。', origin: '登科后', author: '孟郊' },
+    { content: '山有木兮木有枝，心悦君兮君不知。', origin: '越人歌', author: '佚名' },
+    { content: '玲珑骰子安红豆，入骨相思知不知。', origin: '南歌子词二首', author: '温庭筠' }
   ];
   var seed = new Date(dateStr + 'T00:00:00').getTime();
   var fb = fallback[Math.abs(seed) % fallback.length];
 
-  // 联网获取（hitokoto 诗词+哲学类）
-  el.textContent = fb; // 先显示后备，联网成功后替换
+  // 联网获取今日诗词
+  el.textContent = fb.content + ' —— ' + fb.author + '《' + fb.origin + '》';
 
-  fetch('https://v1.hitokoto.cn/?c=i&c=k&encode=json')
+  fetch('https://v1.jinrishici.com/all.json')
     .then(function(r) { return r.json(); })
     .then(function(d) {
-      var q = d.hitokoto || '';
-      var from = d.from || '';
-      var text = q;
-      if (from) text += '  —— ' + from;
-      // 过滤太短或太长的
-      if (q.length < 6 || q.length > 60) return;
+      var content = d.content || '';
+      var origin = d.origin || '';
+      var author = d.author || '';
+      if (!content) return;
+      var text = content;
+      if (author || origin) {
+        text += ' —— ' + (author ? author : '') + (origin ? '《' + origin + '》' : '');
+      }
       el.textContent = text;
       _quoteCache[dateStr] = text;
       try { localStorage.setItem('quote_cache', JSON.stringify(_quoteCache)); } catch(e) {}
     })
-    .catch(function() {
-      el.textContent = fb;
-    });
+    .catch(function() {});
 }
 
 function getWeekStart(offset) {
