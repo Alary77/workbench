@@ -238,6 +238,7 @@ body{font-family:'Inter','Noto Sans SC',-apple-system,sans-serif;background:var(
       <button class="date-nav" onclick="changeDate(1)">▶</button>
       <button class="date-nav" onclick="goToday()" style="margin-left:8px;">今天</button>
     </div>
+    <div id="daily-quote" style="text-align:center;padding:12px 16px;margin-bottom:14px;background:var(--success-bg);border-radius:var(--radius);font-size:13px;color:var(--success);line-height:1.6;">加载今日金句...</div>
     <div class="stats-bar" id="todo-stats"></div>
     <div id="task-add-area" style="display:none;margin-bottom:16px;">
       <div class="section-block">
@@ -326,6 +327,57 @@ function formatDate(ds) {
 function getWeekday(ds) {
   const d = new Date(ds);
   return ['日', '一', '二', '三', '四', '五', '六'][d.getDay()];
+}
+
+// 每日金句（联网获取，每天不同，缓存到localStorage）
+var _quoteCache = {};
+try { _quoteCache = JSON.parse(localStorage.getItem('quote_cache') || '{}'); } catch(e) {}
+
+function loadDailyQuote(dateStr) {
+  var el = document.getElementById('daily-quote');
+  if (!el) return;
+
+  // 先检查缓存（同一天的直接用）
+  if (_quoteCache[dateStr]) {
+    el.textContent = _quoteCache[dateStr];
+    return;
+  }
+
+  // 后备句子库（联网失败时用，根据日期选取）
+  var fallback = [
+    '愿你眼中有星辰大海，心中有繁花似锦。',
+    '岁月不饶人，我亦未曾饶过岁月。',
+    '你站在桥上看风景，看风景人在楼上看你。',
+    '每一个不曾起舞的日子，都是对生命的辜负。',
+    '人生如逆旅，我亦是行人。',
+    '愿所有的美好都如约而至，所有的努力都有回报。',
+    '于无声处听惊雷，于无色处见繁花。',
+    '心有猛虎，细嗅蔷薇。',
+    '你来人间一趟，你要看看太阳。',
+    '面朝大海，春暖花开。'
+  ];
+  var seed = new Date(dateStr + 'T00:00:00').getTime();
+  var fb = fallback[Math.abs(seed) % fallback.length];
+
+  // 联网获取（hitokoto 诗词+哲学类）
+  el.textContent = fb; // 先显示后备，联网成功后替换
+
+  fetch('https://v1.hitokoto.cn/?c=i&c=k&encode=json')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var q = d.hitokoto || '';
+      var from = d.from || '';
+      var text = q;
+      if (from) text += '  —— ' + from;
+      // 过滤太短或太长的
+      if (q.length < 6 || q.length > 60) return;
+      el.textContent = text;
+      _quoteCache[dateStr] = text;
+      try { localStorage.setItem('quote_cache', JSON.stringify(_quoteCache)); } catch(e) {}
+    })
+    .catch(function() {
+      el.textContent = fb;
+    });
 }
 
 function getWeekStart(offset) {
@@ -586,44 +638,8 @@ function renderTasks() {
   document.getElementById('date-display').innerHTML = formatDate(currentDate) + '<br><span style="font-size:13px;color:var(--text-muted);">周' + getWeekday(currentDate) + '</span>';
   document.getElementById('todo-date-label').textContent = '管理你的每日任务';
 
-  // 每日金句（根据日期固定，每天不同）
-  var quotes = [
-    '每一个清晨都是新的开始，阳光会照亮前行的路。',
-    '生活不会辜负每一份努力，时间会给出最好的答案。',
-    '你若盛开，蝴蝶自来；你若精彩，天自安排。',
-    '今天的你，是过去的你所做的选择的结果；明天的你，是今天的你所做的选择的结果。',
-    '不积跬步，无以至千里；不积小流，无以成江海。',
-    '心若向阳，无惧悲伤；人若向前，无惧远方。',
-    '把每一天当作生命的第一天，把每一刻当作新的开始。',
-    '星光不问赶路人，时光不负有心人。',
-    '愿你成为自己的太阳，无需借谁的光。',
-    '所有的美好，都值得被认真对待；所有的努力，都值得被温柔以待。',
-    '人生没有白走的路，每一步都算数。',
-    '与其等风来，不如追风去。',
-    '你只管努力，剩下的交给时间。',
-    '每一个优秀的人，都有一段沉默的时光。',
-    '愿所有的美好都如约而至，愿所有的努力都有回报。',
-    '保持热爱，奔赴山海。',
-    '世上无难事，只怕有心人；只要你愿意，全世界都会为你让路。',
-    '今天再大的事，到了明天就是小事；今年再大的事，到了明年就是故事。',
-    '生活明朗，万物可爱，人间值得，未来可期。',
-    '愿你眼中有光，心中有爱，灵魂有趣，生活有暖。',
-    '不乱于心，不困于情；不畏将来，不念过往。',
-    '越努力越幸运，越自律越自由。',
-    '把脸迎向阳光，就永远不会看到阴影。',
-    '温柔要有，但不是妥协；我们要在安静中，不慌不忙地坚强。',
-    '种一棵树最好的时间是十年前，其次是现在。',
-    '生活就像海洋，只有意志坚强的人才能到达彼岸。',
-    '没有谁的幸运是凭空而来，只有当你足够努力，你才会足够幸运。',
-    '愿你历尽千帆，归来仍是少年。',
-    '每一个不曾起舞的日子，都是对生命的辜负。',
-    '世界那么大，我想去看看；路那么长，我慢慢走。',
-    '心中有梦，眼里有光，脚下有路。',
-    '愿你的生活既有软肋又有盔甲，既有诗意又有远方。'
-  ];
-  var dayIndex = new Date(currentDate + 'T00:00:00').getTime();
-  var quote = quotes[Math.abs(dayIndex) % quotes.length];
-  document.getElementById('date-display').innerHTML += '<div style="font-size:13px;color:var(--success);margin-top:6px;font-style:italic;line-height:1.5;">' + esc(quote) + '</div>';
+  // 每日金句（联网获取，每天不同）
+  loadDailyQuote(currentDate);
 
   const list = DB.tasks.filter(t => t.date === currentDate);
   const done = list.filter(t => t.done).length;
