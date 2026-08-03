@@ -586,6 +586,45 @@ function renderTasks() {
   document.getElementById('date-display').innerHTML = formatDate(currentDate) + '<br><span style="font-size:13px;color:var(--text-muted);">周' + getWeekday(currentDate) + '</span>';
   document.getElementById('todo-date-label').textContent = '管理你的每日任务';
 
+  // 每日金句（根据日期固定，每天不同）
+  var quotes = [
+    '每一个清晨都是新的开始，阳光会照亮前行的路。',
+    '生活不会辜负每一份努力，时间会给出最好的答案。',
+    '你若盛开，蝴蝶自来；你若精彩，天自安排。',
+    '今天的你，是过去的你所做的选择的结果；明天的你，是今天的你所做的选择的结果。',
+    '不积跬步，无以至千里；不积小流，无以成江海。',
+    '心若向阳，无惧悲伤；人若向前，无惧远方。',
+    '把每一天当作生命的第一天，把每一刻当作新的开始。',
+    '星光不问赶路人，时光不负有心人。',
+    '愿你成为自己的太阳，无需借谁的光。',
+    '所有的美好，都值得被认真对待；所有的努力，都值得被温柔以待。',
+    '人生没有白走的路，每一步都算数。',
+    '与其等风来，不如追风去。',
+    '你只管努力，剩下的交给时间。',
+    '每一个优秀的人，都有一段沉默的时光。',
+    '愿所有的美好都如约而至，愿所有的努力都有回报。',
+    '保持热爱，奔赴山海。',
+    '世上无难事，只怕有心人；只要你愿意，全世界都会为你让路。',
+    '今天再大的事，到了明天就是小事；今年再大的事，到了明年就是故事。',
+    '生活明朗，万物可爱，人间值得，未来可期。',
+    '愿你眼中有光，心中有爱，灵魂有趣，生活有暖。',
+    '不乱于心，不困于情；不畏将来，不念过往。',
+    '越努力越幸运，越自律越自由。',
+    '把脸迎向阳光，就永远不会看到阴影。',
+    '温柔要有，但不是妥协；我们要在安静中，不慌不忙地坚强。',
+    '种一棵树最好的时间是十年前，其次是现在。',
+    '生活就像海洋，只有意志坚强的人才能到达彼岸。',
+    '没有谁的幸运是凭空而来，只有当你足够努力，你才会足够幸运。',
+    '愿你历尽千帆，归来仍是少年。',
+    '每一个不曾起舞的日子，都是对生命的辜负。',
+    '世界那么大，我想去看看；路那么长，我慢慢走。',
+    '心中有梦，眼里有光，脚下有路。',
+    '愿你的生活既有软肋又有盔甲，既有诗意又有远方。'
+  ];
+  var dayIndex = new Date(currentDate + 'T00:00:00').getTime();
+  var quote = quotes[Math.abs(dayIndex) % quotes.length];
+  document.getElementById('date-display').innerHTML += '<div style="font-size:13px;color:var(--success);margin-top:6px;font-style:italic;line-height:1.5;">' + esc(quote) + '</div>';
+
   const list = DB.tasks.filter(t => t.date === currentDate);
   const done = list.filter(t => t.done).length;
   const total = list.length;
@@ -1251,7 +1290,6 @@ function renderScriptsContent() {
         const s = groupScripts[si];
         html += '<div class="section-block script-item" data-script-id="' + s.id + '" style="margin-bottom:8px;margin-left:16px;' + (scriptSortMode ? 'border:1px dashed var(--accent);' : '') + '">';
         html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">';
-        html += '<span style="font-size:11px;background:var(--accent-light);color:var(--accent);padding:2px 8px;border-radius:10px;">' + esc(s.category) + '</span>';
         html += '<span style="font-weight:600;font-size:15px;flex:1;">' + esc(s.title) + '</span>';
         if (scriptSortMode) {
           html += '<span style="display:flex;gap:4px;flex-shrink:0;">';
@@ -1341,10 +1379,10 @@ function showScriptModal(editId) {
 
   const categories = [...new Set(DB.scripts.map(s => s.category))];
   let catOptions = categories.map(c => '<option value="' + escAttr(c) + '"' + (s && s.category === c ? ' selected' : '') + '>' + esc(c) + '</option>').join('');
-  catOptions += '<option value="__new__">+ 新建分类</option>';
+  catOptions += '<option value="__new__">+ 新建栏目</option>';
 
   showModal(s ? '编辑话术' : '添加话术',
-    '<div class="form-group"><label class="form-label">分类</label><select class="form-select" id="script-cat" onchange="if(this.value===\'__new__\'){const n=prompt(\'新分类名称\');if(n){const opt=document.createElement(\'option\');opt.value=n;opt.text=n;this.insertBefore(opt,this.lastChild);this.value=n;}}">' + catOptions + '</select></div>' +
+    '<div class="form-group"><label class="form-label">栏目</label><select class="form-select" id="script-cat" onchange="if(this.value===\'__new__\'){var n=prompt(\'请输入栏目名称（如：博主合作）\');if(n){var opt=document.createElement(\'option\');opt.value=n;opt.text=n;this.insertBefore(opt,this.lastChild);this.value=n;}}">' + catOptions + '</select></div>' +
     '<div class="form-group"><label class="form-label">标题</label><input type="text" class="form-input" id="script-title" value="' + escAttr(s ? s.title : '') + '" placeholder="话术标题"></div>' +
     '<div class="form-group"><label class="form-label">内容</label><textarea class="form-textarea" id="script-content" placeholder="话术内容..." style="min-height:150px;">' + esc(s ? s.content : '') + '</textarea></div>',
     function() {
@@ -1906,7 +1944,7 @@ function renderReadingContent() {
   if (books.length === 0) {
     html += '<div style="text-align:center;padding:60px 20px;color:var(--text-muted);">书架空空，点击上方按钮添加在读的书</div>';
   } else {
-    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">';
+    html += '<div style="display:flex;flex-direction:column;gap:16px;">';
     for (const book of books) {
       const colorIdx = books.indexOf(book) % COVER_COLORS.length;
       html += '<div class="section-block book-card" style="position:relative;overflow:hidden;cursor:pointer;" onclick="toggleBookNotes(\'' + book.id + '\')">';
